@@ -1,0 +1,66 @@
+/*
+ * Source stylesheet for the MultiSourceFileUpload field.
+ *
+ * `@reference` pulls in Filament's theme (design tokens, dark variant, the
+ * Tailwind utilities used by `@apply`) WITHOUT re-emitting Filament's base
+ * styles — the host panel already ships those. The build therefore contains
+ * only the rules below, expanded from their `@apply` utilities.
+ *
+ * Build: `npm run build` → resources/dist/filament-multi-source-upload.css
+ */
+
+@reference '../../vendor/filament/filament/resources/css/theme.css';
+
+.fi-msu {
+    @apply flex flex-col gap-2;
+}
+
+/* Label (left) + source switch (right) on one row. */
+.fi-msu-header {
+    @apply flex items-center gap-3;
+}
+
+/* Our label lives inside the field content (not the wrapper Filament scopes its
+   label styles to), so restate the exact same styles here. */
+.fi-msu .fi-fo-field-label-content {
+    @apply text-sm font-medium text-gray-950 dark:text-white;
+}
+
+.fi-msu .fi-fo-field-label-required-mark {
+    @apply text-danger-600 dark:text-danger-400 font-medium;
+}
+
+/* Compact segmented source switch (pushed to the right, beside the label). */
+.fi-msu-switch {
+    @apply ms-auto inline-flex w-fit items-stretch overflow-hidden rounded-lg border border-gray-300 text-xs dark:border-white/10;
+}
+
+.fi-msu-switch-option {
+    @apply cursor-pointer bg-transparent px-3 py-1.5 font-medium text-gray-500 transition dark:text-gray-400;
+}
+
+.fi-msu-switch-option:not(:first-child) {
+    @apply border-s border-gray-300 dark:border-white/10;
+}
+
+.fi-msu-switch-option.fi-active {
+    @apply bg-gray-200 text-gray-950 dark:bg-white/10 dark:text-white;
+}
+
+/* URL pane: the input+button row, then an optional inline error below. */
+.fi-msu-url {
+    @apply flex flex-col gap-1.5;
+}
+
+.fi-msu-url-row {
+    @apply flex items-center gap-2;
+}
+
+.fi-msu-url-field {
+    @apply min-w-0 flex-1;
+}
+
+/* Inline import error, styled like Filament's own field error message. */
+.fi-msu-error {
+    @apply text-sm text-danger-600 dark:text-danger-400;
+}

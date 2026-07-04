@@ -24,10 +24,13 @@ class MultiSourceUploadTestForm extends Component implements HasForms
 
     public bool $urlImport = true;
 
-    public function mount(bool $multiple = false, bool $urlImport = true): void
+    public bool $required = false;
+
+    public function mount(bool $multiple = false, bool $urlImport = true, bool $required = false): void
     {
         $this->multiple = $multiple;
         $this->urlImport = $urlImport;
+        $this->required = $required;
         $this->form->fill();
     }
 
@@ -43,6 +46,7 @@ class MultiSourceUploadTestForm extends Component implements HasForms
                     ->image()
                     ->urlImport($this->urlImport)
                     ->multiple($this->multiple)
+                    ->required($this->required)
                     ->maxSize(1024),
             ]);
     }

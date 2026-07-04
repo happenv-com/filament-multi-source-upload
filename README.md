@@ -26,7 +26,7 @@ Most "upload from URL" components store the link in a separate column (`image` *
 ## Requirements
 
 - PHP 8.5+
-- Filament v5
+- Filament v5.7+
 - Livewire v4
 
 ## Installation
@@ -52,7 +52,7 @@ MultiSourceFileUpload::make('avatar')
     ->maxSize(2048);
 ```
 
-The field renders two tabs — **File** and **From URL**. On the *From URL* tab the user pastes a link and clicks import; the file appears in the dropzone immediately and is committed to the target disk when the form is saved.
+The field renders a compact **File / From URL** switch beside the label. On *From URL* the user pastes a link and clicks **Import**: the file is fetched server-side (SSRF/size guarded) and handed to the field's own uploader, so it appears in the dropzone as a normal upload — thumbnail, type/size validation, progress bar, remove button and all — and saves exactly like a dragged-in file.
 
 Multiple files work too:
 
@@ -67,11 +67,11 @@ MultiSourceFileUpload::make('gallery')
 
 ## How it works
 
-1. The user pastes a URL and clicks import.
-2. The file is downloaded server-side (with SSRF, size and timeout guards) into a genuine Livewire `TemporaryUploadedFile` — the same object a real browser upload produces.
-3. That temp file is injected into the field's state, so Filament's inherited `saveUploadedFiles()` promotes it onto the configured disk on form submit.
+1. The user pastes a URL and clicks **Import**.
+2. The file is downloaded server-side (with SSRF, size and timeout guards) and its bytes are handed back to the browser.
+3. The browser rebuilds a real `File` and feeds it to the field's FilePond instance via `addFile()` — so from that point it is indistinguishable from a file the user dragged in: FilePond validates it (type/size), previews it, uploads it to Livewire's temporary storage and, on submit, Filament promotes it onto the configured disk.
 
-Because the URL and the local file converge on the exact same code path, the imported file honours every setting you already use: `disk()`, `directory()`, `visibility()`, `getUploadedFileNameForStorageUsing()`, `storeFileNamesIn()`, image editing, and so on.
+Because the URL and the local file converge on the **exact same uploader**, the imported file honours every setting you already use: `disk()`, `directory()`, `visibility()`, `acceptedFileTypes()`, `maxSize()`, `getUploadedFileNameForStorageUsing()`, `storeFileNamesIn()`, image editing, and so on — with no duplicated logic.
 
 ## Configuration
 
@@ -102,7 +102,7 @@ MultiSourceFileUpload::make('logo_path')
 
 ## Instant preview
 
-An imported image, video or audio file previews in the dropzone the moment it is imported — no need to save the form first. Other file types (PDF, ZIP, …) are imported correctly but their thumbnail/entry appears after the record is saved.
+The moment the user clicks **Import**, the file drops into the dropzone as a live upload item — image/video/audio thumbnails render immediately, other types (PDF, ZIP, …) show as a named file entry — with an upload progress bar and a remove button, just like a local upload.
 
 ## Security
 
@@ -112,7 +112,7 @@ Fetching a user-supplied URL server-side is an SSRF vector, so the download is g
 - **Private-network blocking** — hosts resolving to private, reserved, loopback or link-local addresses are rejected, including the cloud metadata endpoint (`169.254.169.254`). Opt out per field with `allowPrivateNetworks()`.
 - **Size cap** — the download is streamed and aborted the moment it exceeds `maxUrlImportSize()` (falling back to `maxSize()`, then 25 MB). A declared `Content-Length` over the cap is rejected up front.
 - **Timeout & redirect limit** — a hard request timeout and a bounded number of redirects.
-- **MIME validation** — the downloaded file's type is sniffed from its bytes (not the server's `Content-Type`) and checked against `acceptedFileTypes()` immediately, in addition to Filament's usual save-time validation.
+- **MIME validation** — the downloaded file's type is sniffed from its bytes (not the server's `Content-Type`) and carried on the rebuilt `File`, so FilePond validates it against `acceptedFileTypes()` client-side exactly as it would a local upload, on top of Filament's usual save-time validation.
 
 As with any `FileUpload`, always call `acceptedFileTypes()` (or `image()`) with an explicit type list when files land on a public, PHP-executing disk.
 
@@ -123,6 +123,17 @@ The component ships English and Polish translations. To customise the tab labels
 ```bash
 php artisan vendor:publish --tag="filament-multi-source-upload-translations"
 php artisan vendor:publish --tag="filament-multi-source-upload-views"
+```
+
+The label and source switch reuse Filament's own component classes and design tokens, so they match the active panel theme (including dark mode) with no extra configuration.
+
+## Building the stylesheet
+
+The compiled stylesheet in `resources/dist/` is committed, so installing the package needs no build step. It is authored with Tailwind (`@apply`) in `resources/css/index.css` and only emits the component's own rules (Filament's theme is pulled in via `@reference`, so no base styles are duplicated). To rebuild after editing it:
+
+```bash
+npm install
+npm run build
 ```
 
 ## Testing

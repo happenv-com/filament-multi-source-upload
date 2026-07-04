@@ -19,6 +19,18 @@ function tinyPng(): string
     );
 }
 
+/** Resolve the field out of a freshly mounted test form. */
+function multiSourceField(array $params = []): MultiSourceFileUpload
+{
+    /** @var MultiSourceFileUpload $field */
+    $field = Livewire::test(MultiSourceUploadTestForm::class, $params)
+        ->instance()
+        ->form
+        ->getComponent('logo-upload');
+
+    return $field;
+}
+
 beforeEach(function (): void {
     // Resolve the test host to a fixed public IP so the SSRF guard passes
     // without real DNS; the actual download is intercepted by Http::fake().
@@ -30,76 +42,52 @@ beforeEach(function (): void {
     Storage::fake('tmp-for-tests');
 });
 
-it('imports a URL and stores the file on the target disk as a path (not a URL)', function (): void {
+it('fetches a URL server-side and returns its bytes as a data URL with metadata', function (): void {
     Http::fake(['https://cdn.example.test/*' => fn () => Http::response(tinyPng(), 200, ['Content-Type' => 'image/png'])]);
 
-    $component = Livewire::test(MultiSourceUploadTestForm::class)
-        ->call('callSchemaComponentMethod', 'form.logo-upload', 'importFromUrl', ['url' => 'https://cdn.example.test/logo.png'])
-        ->call('save');
+    // This is the whole server-side contract now: fetch (SSRF/size guarded) and
+    // hand the bytes back to the browser, which rebuilds a File and feeds it to
+    // FilePond exactly like a local upload.
+    $result = multiSourceField()->fetchRemoteFile('https://cdn.example.test/logo.png');
 
-    $stored = $component->get('saved')['logo_path'];
-    $path = is_array($stored) ? array_values($stored)[0] : $stored;
-
-    expect($path)->toBeString()
-        ->and($path)->toStartWith('logos/')
-        ->and($path)->not->toContain('http')
-        ->and(Storage::disk('public')->exists($path))->toBeTrue();
+    expect($result)->toHaveKeys(['name', 'type', 'size', 'dataUrl'])
+        ->and($result['type'])->toBe('image/png')
+        ->and($result['size'])->toBe(strlen(tinyPng()))
+        ->and($result['dataUrl'])->toStartWith('data:image/png;base64,')
+        ->and(base64_decode(substr($result['dataUrl'], strlen('data:image/png;base64,'))))->toBe(tinyPng());
 });
 
-it('replaces the file in single mode and appends in multiple mode', function (bool $multiple, int $expected): void {
-    Http::fake(['https://cdn.example.test/*' => fn () => Http::response(tinyPng(), 200, ['Content-Type' => 'image/png'])]);
+it('returns an error (not an exception) when the download fails', function (): void {
+    // A non-http(s) scheme is rejected up front by the SSRF guard.
+    $result = multiSourceField()->fetchRemoteFile('ftp://cdn.example.test/logo.png');
 
-    $component = Livewire::test(MultiSourceUploadTestForm::class, ['multiple' => $multiple])
-        ->call('callSchemaComponentMethod', 'form.logo-upload', 'importFromUrl', ['url' => 'https://cdn.example.test/a.png'])
-        ->call('callSchemaComponentMethod', 'form.logo-upload', 'importFromUrl', ['url' => 'https://cdn.example.test/b.png'])
-        ->call('save');
-
-    expect(count((array) $component->get('saved')['logo_path']))->toBe($expected);
-})->with([
-    'single replaces' => [false, 1],
-    'multiple appends' => [true, 2],
-]);
-
-it('rejects a non-image URL, notifies, and leaves state empty', function (): void {
-    Http::fake(['https://cdn.example.test/*' => fn () => Http::response('just plain text', 200, ['Content-Type' => 'text/plain'])]);
-
-    $component = Livewire::test(MultiSourceUploadTestForm::class)
-        ->call('callSchemaComponentMethod', 'form.logo-upload', 'importFromUrl', ['url' => 'https://cdn.example.test/evil.txt'])
-        ->assertNotified()
-        ->call('save');
-
-    expect($component->get('saved')['logo_path'] ?? [])->toBeEmpty();
+    expect($result)->toHaveKey('error')
+        ->and($result)->not->toHaveKey('dataUrl')
+        ->and($result['error'])->toBeString()->not->toBe('');
 });
 
-it('exposes a preview payload for a freshly imported (unsaved) temp file', function (): void {
-    Http::fake(['https://cdn.example.test/*' => fn () => Http::response(tinyPng(), 200, ['Content-Type' => 'image/png'])]);
+it('returns an error for an empty URL', function (): void {
+    $result = multiSourceField()->fetchRemoteFile('   ');
 
-    $test = Livewire::test(MultiSourceUploadTestForm::class)
-        ->call('callSchemaComponentMethod', 'form.logo-upload', 'importFromUrl', ['url' => 'https://cdn.example.test/logo.png']);
-
-    /** @var MultiSourceFileUpload $field */
-    $field = $test->instance()->form->getComponent('logo-upload');
-    $uploaded = $field->getUploadedFiles();
-
-    expect($uploaded)->toBeArray()->not->toBeEmpty();
-
-    $entry = array_values($uploaded)[0];
-
-    expect($entry)->not->toBeNull()
-        ->and($entry['type'])->toBe('image/png')
-        ->and($entry['url'])->toBeString();
+    expect($result)->toHaveKey('error')
+        ->and($result)->not->toHaveKey('dataUrl');
 });
 
-it('renders the tabbed UI with a URL tab when url import is enabled', function (): void {
+it('renders the source switch and drives FilePond from the URL pane', function (): void {
     $html = Livewire::test(MultiSourceUploadTestForm::class)
         ->assertSee('data-msu-tabs', escape: false)
         ->assertSee('From URL')
         ->html();
 
-    // The Alpine wiring must reach the DOM: the import button triggers the
-    // exposed importFromUrl method and the URL field binds to Alpine state.
-    expect($html)->toContain('importFromUrl')
-        ->and($html)->toContain('x-model="url"');
+    expect($html)->toContain('fi-msu-switch')
+        // The import button no longer lives in a companion Livewire state; it
+        // fetches server-side then hands the file to FilePond's own pipeline.
+        ->and($html)->not->toContain('logo_path__url')
+        ->and($html)->toContain('pond.addFile')
+        // @js() must compile to the real key (it does inside a plain element's
+        // x-data — unlike inside a Blade component attribute). Guard the regression.
+        ->and($html)->not->toContain('@js(')
+        ->and($html)->toContain("callSchemaComponentMethod('form.logo-upload', 'fetchRemoteFile'");
 });
 
 it('renders a plain FileUpload (no tabs) when url import is disabled', function (): void {

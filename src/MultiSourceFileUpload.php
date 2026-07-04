@@ -6,7 +6,6 @@ namespace Happenv\FilamentMultiSourceUpload;
 
 use Closure;
 use Filament\Forms\Components\FileUpload;
-use Filament\Notifications\Notification;
 use Filament\Support\Components\Attributes\ExposedLivewireMethod;
 use Happenv\FilamentMultiSourceUpload\Exceptions\RemoteFileFetchException;
 use Happenv\FilamentMultiSourceUpload\Support\RemoteFileFetcher;
@@ -18,45 +17,56 @@ use Throwable;
 
 class MultiSourceFileUpload extends FileUpload
 {
-    protected bool | Closure $hasUrlImport = true;
+    protected bool|Closure $hasUrlImport = true;
 
-    protected bool | Closure $allowPrivateNetworks = false;
+    protected bool|Closure $allowPrivateNetworks = false;
 
-    protected int | Closure | null $maxUrlImportSize = null;
+    protected int|Closure|null $maxUrlImportSize = null;
 
-    protected string | Closure | null $urlTabLabel = null;
+    protected string|Closure|null $urlTabLabel = null;
 
-    protected string | Closure | null $fileTabLabel = null;
+    protected string|Closure|null $fileTabLabel = null;
 
-    public function urlImport(bool | Closure $condition = true): static
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // We render our own label + source switch on one row inside the field
+        // content (so we fully control the layout and share one Alpine scope),
+        // so hide the wrapper's own visible label to avoid a duplicate. It stays
+        // available to screen readers.
+        $this->hiddenLabel(fn (): bool => $this->hasUrlImport());
+    }
+
+    public function urlImport(bool|Closure $condition = true): static
     {
         $this->hasUrlImport = $condition;
 
         return $this;
     }
 
-    public function allowPrivateNetworks(bool | Closure $condition = true): static
+    public function allowPrivateNetworks(bool|Closure $condition = true): static
     {
         $this->allowPrivateNetworks = $condition;
 
         return $this;
     }
 
-    public function maxUrlImportSize(int | Closure | null $kilobytes): static
+    public function maxUrlImportSize(int|Closure|null $kilobytes): static
     {
         $this->maxUrlImportSize = $kilobytes;
 
         return $this;
     }
 
-    public function urlTabLabel(string | Closure | null $label): static
+    public function urlTabLabel(string|Closure|null $label): static
     {
         $this->urlTabLabel = $label;
 
         return $this;
     }
 
-    public function fileTabLabel(string | Closure | null $label): static
+    public function fileTabLabel(string|Closure|null $label): static
     {
         $this->fileTabLabel = $label;
 
@@ -65,7 +75,7 @@ class MultiSourceFileUpload extends FileUpload
 
     public function hasUrlImport(): bool
     {
-        return (bool) $this->evaluate($this->hasUrlImport) && ! $this->isDisabled();
+        return (bool) $this->evaluate($this->hasUrlImport);
     }
 
     public function allowsPrivateNetworks(): bool
@@ -101,10 +111,13 @@ class MultiSourceFileUpload extends FileUpload
         return view('filament-multi-source-upload::components.multi-source-file-upload', [
             'filePane' => parent::toEmbeddedHtml(),
             'key' => $this->getKey(),
+            'label' => $this->getLabel(),
+            'isRequired' => $this->isMarkedAsRequired(),
             'fileTabLabel' => $this->getFileTabLabel(),
             'urlTabLabel' => $this->getUrlTabLabel(),
             'urlPlaceholder' => __('filament-multi-source-upload::multi-source-file-upload.url_placeholder'),
             'importLabel' => __('filament-multi-source-upload::multi-source-file-upload.import'),
+            'genericErrorMessage' => __('filament-multi-source-upload::multi-source-file-upload.import_failed'),
         ])->render();
     }
 
@@ -191,11 +204,28 @@ class MultiSourceFileUpload extends FileUpload
         );
     }
 
+    /**
+     * Fetch a user-supplied URL server-side (SSRF-, size- and timeout-guarded)
+     * and hand its bytes back to the browser as a base64 data URL, together with
+     * the sniffed filename, MIME type and size. The client turns this into a real
+     * File and feeds it to FilePond via `addFile()`, so a URL-sourced file flows
+     * through the exact same pipeline as a local upload — client-side type/size
+     * validation, preview, the temporary upload and the eventual save included.
+     * No file state is written here; FilePond owns the file from this point on.
+     *
+     * @return array{name: string, type: ?string, size: int, dataUrl: string}|array{error: string}
+     */
     #[ExposedLivewireMethod]
-    public function importFromUrl(string $url): void
+    public function fetchRemoteFile(string $url): array
     {
-        if (! $this->hasUrlImport()) {
-            return;
+        if (! $this->hasUrlImport() || $this->isDisabled()) {
+            return ['error' => __('filament-multi-source-upload::multi-source-file-upload.import_failed')];
+        }
+
+        $url = trim($url);
+
+        if ($url === '') {
+            return ['error' => __('filament-multi-source-upload::multi-source-file-upload.reason_empty_url')];
         }
 
         try {
@@ -205,65 +235,22 @@ class MultiSourceFileUpload extends FileUpload
                 maxSizeKb: $this->getEffectiveMaxUrlImportSize(),
             );
         } catch (RemoteFileFetchException $exception) {
-            $this->notifyImportFailure($exception->translatedReason());
-
-            return;
+            return ['error' => $exception->translatedReason()];
         }
 
-        $rejection = $this->rejectionReason($file);
-        if ($rejection !== null) {
+        try {
+            $mimeType = $file->getMimeType();
+
+            return [
+                'name' => $file->getClientOriginalName(),
+                'type' => $mimeType,
+                'size' => $file->getSize(),
+                'dataUrl' => 'data:'.($mimeType ?? 'application/octet-stream').';base64,'.base64_encode($file->get()),
+            ];
+        } finally {
+            // We only needed the bytes; the browser re-uploads through FilePond's
+            // own pipeline, so drop this server-side temporary copy right away.
             $file->delete();
-            $this->notifyImportFailure($rejection);
-
-            return;
         }
-
-        $state = $this->isMultiple() ? ($this->getRawState() ?? []) : [];
-        $state[(string) Str::uuid()] = $file;
-
-        $this->rawState($state);
-        $this->callAfterStateUpdated();
-    }
-
-    private function rejectionReason(TemporaryUploadedFile $file): ?string
-    {
-        $types = $this->getAcceptedFileTypes();
-        if ($types !== null && $types !== [] && ! $this->mimeMatches($file->getMimeType(), $types)) {
-            return __('filament-multi-source-upload::multi-source-file-upload.reason_invalid_type');
-        }
-
-        $maxKb = $this->getMaxSize();
-        if ($maxKb !== null && $file->getSize() > $maxKb * 1024) {
-            return __('filament-multi-source-upload::multi-source-file-upload.reason_too_large');
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  array<string>  $accepted
-     */
-    private function mimeMatches(string $mime, array $accepted): bool
-    {
-        foreach ($accepted as $pattern) {
-            if ($pattern === $mime) {
-                return true;
-            }
-
-            if (str_ends_with($pattern, '/*') && str_starts_with($mime, substr($pattern, 0, -1))) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function notifyImportFailure(string $body): void
-    {
-        Notification::make()
-            ->danger()
-            ->title(__('filament-multi-source-upload::multi-source-file-upload.import_failed'))
-            ->body($body)
-            ->send();
     }
 }

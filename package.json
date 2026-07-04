@@ -1,0 +1,11 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "tailwindcss --input ./resources/css/index.css --output ./resources/dist/filament-multi-source-upload.css --minify"
+    },
+    "devDependencies": {
+        "@tailwindcss/cli": "^4.1",
+        "tailwindcss": "^4.1"
+    }
+}
