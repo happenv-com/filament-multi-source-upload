@@ -117,8 +117,10 @@ final readonly class RemoteFileFetcher
         $resolver = $this->hostResolver ?? static fn (string $h): array => gethostbynamel($h) ?: [];
         $ips = $resolver($host);
 
+        // A name that does not resolve is refused before any request is sent,
+        // but it is a typo or a dead domain, not an address we block.
         if ($ips === []) {
-            throw RemoteFileFetchException::blockedHost();
+            throw RemoteFileFetchException::unreachable();
         }
 
         return $ips;

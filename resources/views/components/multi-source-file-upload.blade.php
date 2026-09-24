@@ -50,7 +50,12 @@
 
                 this.url = ''
             } catch (error) {
-                this.error = this.error ?? @js($genericErrorMessage)
+                // Once the file is in FilePond, FilePond shows why it was
+                // refused on the item itself; a message here would only wait,
+                // stale, on the hidden URL pane.
+                if (this.tab === 'url') {
+                    this.error = this.error ?? @js($genericErrorMessage)
+                }
             } finally {
                 this.importing = false
             }
@@ -73,7 +78,7 @@
                 type="button"
                 role="tab"
                 class="fi-msu-switch-option"
-                x-on:click="tab = 'file'"
+                x-on:click="tab = 'file'; error = null"
                 x-bind:class="{ 'fi-active': tab === 'file' }"
                 x-bind:aria-selected="tab === 'file'"
             >
@@ -84,7 +89,7 @@
                 type="button"
                 role="tab"
                 class="fi-msu-switch-option"
-                x-on:click="tab = 'url'"
+                x-on:click="tab = 'url'; error = null"
                 x-bind:class="{ 'fi-active': tab === 'url' }"
                 x-bind:aria-selected="tab === 'url'"
             >
@@ -103,6 +108,7 @@
                 <x-filament::input
                     type="url"
                     x-model="url"
+                    x-on:input="error = null"
                     x-bind:disabled="importing"
                     :placeholder="$urlPlaceholder"
                     x-on:keydown.enter.prevent="importFromUrl()"
@@ -110,7 +116,7 @@
             </x-filament::input.wrapper>
 
             <x-filament::button
-                x-bind:disabled="importing"
+                x-bind:disabled="importing || url.trim() === ''"
                 x-on:click="importFromUrl()"
             >
                 <span x-show="! importing">{{ $importLabel }}</span>

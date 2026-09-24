@@ -146,7 +146,20 @@ it('blocks a redirect to a private or metadata address', function (string $targe
     'loopback' => ['http://127.0.0.1:8080/admin', []],
     'IPv6 loopback' => ['http://[::1]/x.png', []],
     'internal host name' => ['http://intranet.example.test/x.png', ['intranet.example.test' => ['10.0.0.8']]],
-    'unresolvable host name' => ['http://nowhere.example.test/x.png', []],
+]);
+
+it('reports a host name that does not resolve as unreachable, without requesting it', function (string $url): void {
+    Http::fake(['https://cdn.example.test/*' => Http::response('', 302, ['Location' => 'http://nowhere.example.test/x.png'])]);
+
+    $fetcher = new RemoteFileFetcher(hostResolver: fetcherTestResolver(['cdn.example.test' => ['93.184.216.34']]));
+
+    expect(fetcherTestReason(fn (): TemporaryUploadedFile => $fetcher->fetch($url, allowPrivateNetworks: false, maxSizeKb: 25600)))
+        ->toBe(FETCHER_TEST_UNREACHABLE);
+
+    Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), 'nowhere.example.test'));
+})->with([
+    'entered' => ['http://nowhere.example.test/x.png'],
+    'redirected to' => ['https://cdn.example.test/logo.png'],
 ]);
 
 it('blocks a redirect to a non-http scheme', function (): void {
