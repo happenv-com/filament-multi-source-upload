@@ -1,0 +1,107 @@
+name: 'Assets'
+
+# resources/dist is committed and served by Filament as is, so it has to match
+# what the sources build to. A change to resources/css without a rebuild ships
+# the OLD assets; this check refuses it.
+#
+# The stylesheet is built by the Tailwind CLI from resources/css/index.css. It
+# `@reference`s Filament's theme from vendor/ (design tokens and the utilities
+# its `@apply` rules expand) and emits no utilities of its own, so no views or
+# PHP files are scanned: its inputs are index.css, the Tailwind version
+# (package-lock.json) and the Filament theme (composer.json).
+
+on:
+  push:
+    branches:
+      - '*.x'
+      - main
+      - develop
+    paths:
+      - 'resources/css/**'
+      - 'resources/dist/**'
+      # The Filament version whose theme index.css references.
+      - 'composer.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
+      - '.prettierrc'
+      - '.prettierignore'
+      - '.github/workflows/assets.yml'
+
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    paths:
+      - 'resources/css/**'
+      - 'resources/dist/**'
+      # The Filament version whose theme index.css references.
+      - 'composer.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
+      - '.prettierrc'
+      - '.prettierignore'
+      - '.github/workflows/assets.yml'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: check built assets
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # The same Node the maintainers build with — resources/dist is compared
+          # byte for byte.
+          node-version-file: .nvmrc
+          # No npm cache: restoring it is a cache-poisoning surface (zizmor), and
+          # `npm ci` of a handful of build tools takes seconds anyway.
+          package-manager-cache: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      # index.css `@reference`s vendor/filament/filament/resources/css/theme.css.
+      - name: Install Composer dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress --no-scripts
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Check formatting (Prettier)
+        run: npm run lint
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Check resources/dist is up to date
+        run: |
+          if [ -n "$(git status --porcelain -- resources/dist)" ]; then
+            git status --short -- resources/dist
+            git diff --stat -- resources/dist
+            echo "::error::resources/dist is out of date. Run \`npm run build\` and commit the result."
+            exit 1
+          fi
