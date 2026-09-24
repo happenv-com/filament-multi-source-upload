@@ -34,13 +34,22 @@ dataset('translation files', function (): array {
     $lang = dirname(__DIR__, 2) . '/resources/lang';
     $cases = [];
 
-    foreach (glob("{$lang}/en/*.php") ?: [] as $english) {
-        foreach (glob("{$lang}/*", GLOB_ONLYDIR) ?: [] as $localeDirectory) {
-            $locale = basename($localeDirectory);
+    foreach (glob("{$lang}/*", GLOB_ONLYDIR) ?: [] as $localeDirectory) {
+        $locale = basename($localeDirectory);
 
-            if ($locale !== 'en') {
-                $cases[$locale . '/' . basename($english)] = [$english, "{$localeDirectory}/" . basename($english)];
-            }
+        if ($locale === 'en') {
+            continue;
+        }
+
+        // English files AND the locale's own: a file only the locale has (a
+        // leftover of a rename) must fail as well as one it is missing.
+        $files = array_unique(array_map(basename(...), [
+            ...(glob("{$lang}/en/*.php") ?: []),
+            ...(glob("{$localeDirectory}/*.php") ?: []),
+        ]));
+
+        foreach ($files as $file) {
+            $cases["{$locale}/{$file}"] = ["{$lang}/en/{$file}", "{$localeDirectory}/{$file}"];
         }
     }
 
@@ -54,7 +63,8 @@ it('translates every key and nothing else', function (?string $english, ?string 
         return;
     }
 
-    expect($translation)->toBeFile();
+    expect($english)->toBeFile()
+        ->and($translation)->toBeFile();
 
     $expected = translationKeys($english);
     $actual = translationKeys($translation);
