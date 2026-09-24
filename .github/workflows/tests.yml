@@ -13,8 +13,10 @@ name: 'Tests'
 #
 # Filament floor ^5.8.3: earlier releases do not bind Livewire's DataStore as
 # a singleton, and every Livewire render under Testbench fails
-# (filamentphp/filament#20515). composer.json allows an older Filament 5
-# release, verified locally; CI cannot test below 5.8.3.
+# (filamentphp/filament#20515). composer.json allows ^5.7.0, the first release
+# with FileUpload::toEmbeddedHtml(), which the field wraps; that floor was
+# verified locally with the DataStore bound by hand. Composer's
+# security-advisory blocking refuses 5.7.0 - 5.7.5 anyway.
 #
 # prefer-lowest runs on PHP 8.5 although the lowest dependency set predates
 # it: PHP 8.5 is the only PHP the package supports. Deprecations raised by

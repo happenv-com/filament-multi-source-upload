@@ -36,7 +36,7 @@
     },
     "require": {
         "php": "^8.5",
-        "filament/filament": "^5.7.0-beta2",
+        "filament/filament": "^5.7.0",
         "livewire/livewire": "^4.0",
         "spatie/laravel-package-tools": "^1.14"
     },
