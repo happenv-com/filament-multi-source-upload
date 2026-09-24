@@ -57,9 +57,19 @@ final readonly class RemoteFileFetcher
 
             $uploaded = new UploadedFile($localPath, $name, $mime, test: true);
 
-            $storedPath = $this->storeTemporaryFile($uploaded);
+            try {
+                $storedPath = $this->storeTemporaryFile($uploaded);
+            } catch (Throwable) {
+                $storedPath = false;
+            }
 
-            return TemporaryUploadedFile::createFromLivewire(basename((string) $storedPath));
+            // The temporary disk refused the file: report it like any other
+            // failed import rather than hand Livewire an empty file name.
+            if ($storedPath === false) {
+                throw RemoteFileFetchException::unreachable();
+            }
+
+            return TemporaryUploadedFile::createFromLivewire(basename($storedPath));
         } finally {
             @unlink($localPath);
         }
