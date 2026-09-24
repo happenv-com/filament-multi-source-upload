@@ -17,6 +17,8 @@
             this.importing = true
             this.error = null
 
+            let handedToFilePond = false
+
             try {
                 // Fetch the bytes server-side (SSRF/size/timeout guarded) and
                 // receive them as a data URL, then rebuild a real File so it can
@@ -45,6 +47,7 @@
                 // preview, upload and manage the file exactly like a local one.
                 // Any validation failure surfaces inline on the FilePond item.
                 this.tab = 'file'
+                handedToFilePond = true
 
                 await fileUpload.pond.addFile(file)
 
@@ -52,8 +55,9 @@
             } catch (error) {
                 // Once the file is in FilePond, FilePond shows why it was
                 // refused on the item itself; a message here would only wait,
-                // stale, on the hidden URL pane.
-                if (this.tab === 'url') {
+                // stale, on the URL pane — even if the user has switched back
+                // to it while FilePond was still deciding.
+                if (! handedToFilePond) {
                     this.error = this.error ?? @js($genericErrorMessage)
                 }
             } finally {
