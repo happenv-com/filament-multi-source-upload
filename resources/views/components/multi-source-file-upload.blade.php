@@ -17,6 +17,8 @@
             this.importing = true
             this.error = null
 
+            let handedToFilePond = false
+
             try {
                 // Fetch the bytes server-side (SSRF/size/timeout guarded) and
                 // receive them as a data URL, then rebuild a real File so it can
@@ -45,12 +47,19 @@
                 // preview, upload and manage the file exactly like a local one.
                 // Any validation failure surfaces inline on the FilePond item.
                 this.tab = 'file'
+                handedToFilePond = true
 
                 await fileUpload.pond.addFile(file)
 
                 this.url = ''
             } catch (error) {
-                this.error = this.error ?? @js($genericErrorMessage)
+                // Once the file is in FilePond, FilePond shows why it was
+                // refused on the item itself; a message here would only wait,
+                // stale, on the URL pane — even if the user has switched back
+                // to it while FilePond was still deciding.
+                if (! handedToFilePond) {
+                    this.error = this.error ?? @js($genericErrorMessage)
+                }
             } finally {
                 this.importing = false
             }
@@ -73,7 +82,7 @@
                 type="button"
                 role="tab"
                 class="fi-msu-switch-option"
-                x-on:click="tab = 'file'"
+                x-on:click="tab = 'file'; error = null"
                 x-bind:class="{ 'fi-active': tab === 'file' }"
                 x-bind:aria-selected="tab === 'file'"
             >
@@ -84,7 +93,7 @@
                 type="button"
                 role="tab"
                 class="fi-msu-switch-option"
-                x-on:click="tab = 'url'"
+                x-on:click="tab = 'url'; error = null"
                 x-bind:class="{ 'fi-active': tab === 'url' }"
                 x-bind:aria-selected="tab === 'url'"
             >
@@ -103,6 +112,7 @@
                 <x-filament::input
                     type="url"
                     x-model="url"
+                    x-on:input="error = null"
                     x-bind:disabled="importing"
                     :placeholder="$urlPlaceholder"
                     x-on:keydown.enter.prevent="importFromUrl()"
@@ -110,7 +120,7 @@
             </x-filament::input.wrapper>
 
             <x-filament::button
-                x-bind:disabled="importing"
+                x-bind:disabled="importing || url.trim() === ''"
                 x-on:click="importFromUrl()"
             >
                 <span x-show="! importing">{{ $importLabel }}</span>

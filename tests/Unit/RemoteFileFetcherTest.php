@@ -146,7 +146,20 @@ it('blocks a redirect to a private or metadata address', function (string $targe
     'loopback' => ['http://127.0.0.1:8080/admin', []],
     'IPv6 loopback' => ['http://[::1]/x.png', []],
     'internal host name' => ['http://intranet.example.test/x.png', ['intranet.example.test' => ['10.0.0.8']]],
-    'unresolvable host name' => ['http://nowhere.example.test/x.png', []],
+]);
+
+it('reports a host name that does not resolve as unreachable, without requesting it', function (string $url): void {
+    Http::fake(['https://cdn.example.test/*' => Http::response('', 302, ['Location' => 'http://nowhere.example.test/x.png'])]);
+
+    $fetcher = new RemoteFileFetcher(hostResolver: fetcherTestResolver(['cdn.example.test' => ['93.184.216.34']]));
+
+    expect(fetcherTestReason(fn (): TemporaryUploadedFile => $fetcher->fetch($url, allowPrivateNetworks: false, maxSizeKb: 25600)))
+        ->toBe(FETCHER_TEST_UNREACHABLE);
+
+    Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), 'nowhere.example.test'));
+})->with([
+    'entered' => ['http://nowhere.example.test/x.png'],
+    'redirected to' => ['https://cdn.example.test/logo.png'],
 ]);
 
 it('blocks a redirect to a non-http scheme', function (): void {
@@ -303,4 +316,38 @@ it('blocks unspecified, IPv4-mapped and numeric forms of private addresses', fun
     'http://0177.0.0.1/x.png',
     'http://0x7f.0.0.1/x.png',
     'http://127.1/x.png',
+]);
+
+it('reads numeric IPv4 forms itself, whatever the resolver makes of them', function (string $url): void {
+    // glibc's resolver does not resolve hex parts: without reading them itself the
+    // fetcher would report a loopback address as unreachable instead of blocked.
+    $fetcher = new RemoteFileFetcher(hostResolver: fn (string $host): array => []);
+
+    expect(fetcherTestReason(fn (): TemporaryUploadedFile => $fetcher->fetch($url, allowPrivateNetworks: false, maxSizeKb: 25600)))
+        ->toBe(FETCHER_TEST_BLOCKED_HOST);
+
+    Http::assertNothingSent();
+})->with([
+    'http://0x7f.0.0.1/x.png',
+    'http://0x7f000001/x.png',
+    'http://0x7f.1/x.png',
+    'http://0177.0.0.1/x.png',
+    'http://2130706433/x.png',
+    'http://127.1/x.png',
+    'http://10.0x10.1/x.png',
+    'http://0xa9.0xfe.0xa9.0xfe/latest/meta-data',
+]);
+
+it('leaves host names that only look numeric to the resolver', function (string $url): void {
+    $fetcher = new RemoteFileFetcher(hostResolver: fn (string $host): array => []);
+
+    expect(fetcherTestReason(fn (): TemporaryUploadedFile => $fetcher->fetch($url, allowPrivateNetworks: false, maxSizeKb: 25600)))
+        ->toBe(FETCHER_TEST_UNREACHABLE);
+})->with([
+    'too many parts' => 'http://1.2.3.4.5/x.png',
+    'part over a byte' => 'http://256.1.1.1/x.png',
+    'last part too large' => 'http://1.2.3.256/x.png',
+    'number over 32 bits' => 'http://4294967296/x.png',
+    'bad octal digit' => 'http://08.0.0.1/x.png',
+    'letters' => 'http://0x7g.0.0.1/x.png',
 ]);
