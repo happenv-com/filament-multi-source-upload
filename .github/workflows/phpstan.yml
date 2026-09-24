@@ -49,7 +49,7 @@ jobs:
       matrix:
         include:
           - filament: '5'
-            filament-constraint: '^5.8.3'
+            filament-constraint: '^5.7.0'
 
     steps:
       - name: Checkout code

@@ -73,7 +73,6 @@ abstract class TestCase extends Orchestra
         return [
             BladeIconsServiceProvider::class,
             BladeHeroiconsServiceProvider::class,
-            LivewireServiceProvider::class,
             SupportServiceProvider::class,
             ActionsServiceProvider::class,
             InfolistsServiceProvider::class,
@@ -83,6 +82,11 @@ abstract class TestCase extends Orchestra
             TablesServiceProvider::class,
             NotificationsServiceProvider::class,
             FilamentServiceProvider::class,
+            // After Filament, as package discovery orders them in an app
+            // (alphabetically: filament/* before livewire/livewire). Filament
+            // before 4.13.3 / 5.8.3 re-binds Livewire's DataStore as non-shared
+            // when it registers AFTER Livewire (filamentphp/filament#20515).
+            LivewireServiceProvider::class,
             FilamentMultiSourceUploadServiceProvider::class,
             TestPanelProvider::class,
         ];

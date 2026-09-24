@@ -11,12 +11,12 @@ name: 'Tests'
 # Filament 5 only, so the matrix is PHP 8.5 x Laravel 13 x Filament 5, lowest
 # and stable. Do not add versions composer.json does not allow.
 #
-# Filament floor ^5.8.3: earlier releases do not bind Livewire's DataStore as
-# a singleton, and every Livewire render under Testbench fails
-# (filamentphp/filament#20515). composer.json allows ^5.7.0, the first release
-# with FileUpload::toEmbeddedHtml(), which the field wraps; that floor was
-# verified locally with the DataStore bound by hand. Composer's
-# security-advisory blocking refuses 5.7.0 - 5.7.5 anyway.
+# Filament floor = composer.json's own (^5.7.0, the first release with
+# FileUpload::toEmbeddedHtml(), which the field wraps), so prefer-lowest proves
+# it. Composer's security-advisory blocking refuses 5.7.0 - 5.7.5, so the lowest
+# leg resolves 5.7.6. tests/TestCase.php registers Livewire AFTER Filament, as
+# package discovery does in an app; the other order breaks every Livewire render
+# on Filament before 5.8.3 (filamentphp/filament#20515).
 #
 # prefer-lowest runs on PHP 8.5 although the lowest dependency set predates
 # it: PHP 8.5 is the only PHP the package supports. Deprecations raised by
@@ -68,7 +68,7 @@ jobs:
           - laravel: '13.*'
             testbench: '11.*'
           - filament: '5'
-            filament-constraint: '^5.8.3'
+            filament-constraint: '^5.7.0'
 
     steps:
       - name: Checkout code
