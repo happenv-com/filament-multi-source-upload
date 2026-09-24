@@ -1,0 +1,15 @@
+includes:
+    - phpstan-baseline.neon
+    - vendor/larastan/larastan/extension.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+
+parameters:
+    level: 6
+    paths:
+        - src
+    tmpDir: build/phpstan
+    checkOctaneCompatibility: true
+    checkModelProperties: true
+    # CI analyses against every supported Filament major; a baseline entry
+    # that only one of them produces must not fail the others.
+    reportUnmatchedIgnoredErrors: false

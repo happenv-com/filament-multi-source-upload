@@ -2,10 +2,15 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "tailwindcss --input ./resources/css/index.css --output ./resources/dist/filament-multi-source-upload.css --minify"
+        "build": "tailwindcss --input resources/css/index.css --output resources/dist/filament-multi-source-upload.css --minify",
+        "dev": "tailwindcss --input resources/css/index.css --output resources/dist/filament-multi-source-upload.css --watch",
+        "format": "prettier --write resources/css",
+        "lint": "prettier --check resources/css"
     },
     "devDependencies": {
         "@tailwindcss/cli": "^4.1",
+        "prettier": "^3.9.7",
+        "prettier-plugin-tailwindcss": "^0.7.4",
         "tailwindcss": "^4.1"
     }
 }

@@ -17,15 +17,15 @@ use Throwable;
 
 class MultiSourceFileUpload extends FileUpload
 {
-    protected bool|Closure $hasUrlImport = true;
+    protected bool | Closure $hasUrlImport = true;
 
-    protected bool|Closure $allowPrivateNetworks = false;
+    protected bool | Closure $allowPrivateNetworks = false;
 
-    protected int|Closure|null $maxUrlImportSize = null;
+    protected int | Closure | null $maxUrlImportSize = null;
 
-    protected string|Closure|null $urlTabLabel = null;
+    protected string | Closure | null $urlTabLabel = null;
 
-    protected string|Closure|null $fileTabLabel = null;
+    protected string | Closure | null $fileTabLabel = null;
 
     protected function setUp(): void
     {
@@ -38,35 +38,35 @@ class MultiSourceFileUpload extends FileUpload
         $this->hiddenLabel(fn (): bool => $this->hasUrlImport());
     }
 
-    public function urlImport(bool|Closure $condition = true): static
+    public function urlImport(bool | Closure $condition = true): static
     {
         $this->hasUrlImport = $condition;
 
         return $this;
     }
 
-    public function allowPrivateNetworks(bool|Closure $condition = true): static
+    public function allowPrivateNetworks(bool | Closure $condition = true): static
     {
         $this->allowPrivateNetworks = $condition;
 
         return $this;
     }
 
-    public function maxUrlImportSize(int|Closure|null $kilobytes): static
+    public function maxUrlImportSize(int | Closure | null $kilobytes): static
     {
         $this->maxUrlImportSize = $kilobytes;
 
         return $this;
     }
 
-    public function urlTabLabel(string|Closure|null $label): static
+    public function urlTabLabel(string | Closure | null $label): static
     {
         $this->urlTabLabel = $label;
 
         return $this;
     }
 
-    public function fileTabLabel(string|Closure|null $label): static
+    public function fileTabLabel(string | Closure | null $label): static
     {
         $this->fileTabLabel = $label;
 
@@ -245,7 +245,7 @@ class MultiSourceFileUpload extends FileUpload
                 'name' => $file->getClientOriginalName(),
                 'type' => $mimeType,
                 'size' => $file->getSize(),
-                'dataUrl' => 'data:'.($mimeType ?? 'application/octet-stream').';base64,'.base64_encode($file->get()),
+                'dataUrl' => 'data:' . $mimeType . ';base64,' . base64_encode($file->get()),
             ];
         } finally {
             // We only needed the bytes; the browser re-uploads through FilePond's

@@ -1,0 +1,6 @@
+composer.lock
+package-lock.json
+resources/dist
+vendor
+node_modules
+CHANGELOG.md
