@@ -8,9 +8,9 @@
         "lint": "prettier --check resources/css"
     },
     "devDependencies": {
-        "@tailwindcss/cli": "^4.1",
+        "@tailwindcss/cli": "^4.3",
         "prettier": "^3.9.7",
-        "prettier-plugin-tailwindcss": "^0.7.4",
+        "prettier-plugin-tailwindcss": "^0.8.1",
         "tailwindcss": "^4.1"
     }
 }
