@@ -245,7 +245,7 @@ class MultiSourceFileUpload extends FileUpload
                 'name' => $file->getClientOriginalName(),
                 'type' => $mimeType,
                 'size' => $file->getSize(),
-                'dataUrl' => 'data:' . ($mimeType ?? 'application/octet-stream') . ';base64,' . base64_encode($file->get()),
+                'dataUrl' => 'data:' . $mimeType . ';base64,' . base64_encode($file->get()),
             ];
         } finally {
             // We only needed the bytes; the browser re-uploads through FilePond's
