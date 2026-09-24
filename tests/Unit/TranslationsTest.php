@@ -71,4 +71,29 @@ it('translates every key and nothing else', function (?string $english, ?string 
 
     expect(array_keys($actual))->toEqualCanonicalizing(array_keys($expected))
         ->and($actual)->each->toBeString()->not->toBeEmpty();
+
+    // A value copied from English is an untranslated string, unless the text really is the same
+    // in that language — list those here as "locale.key", or as "key" for every locale.
+    $sameAsEnglish = ['url_placeholder', 'fil.file_tab', 'it.file_tab', 'ms.import'];
+    $locale = basename(dirname($translation));
+
+    foreach ($expected as $key => $value) {
+        if (! in_array($key, $sameAsEnglish, true) && ! in_array("{$locale}.{$key}", $sameAsEnglish, true)) {
+            expect($actual[$key])->not->toBe($value, "{$locale}.{$key} is still the English text");
+        }
+    }
 })->with('translation files');
+
+it('finds the locales Filament ships to compare against', function (): void {
+    // Without this, a missing vendor directory would leave the dataset below empty and the
+    // coverage check would pass without checking anything.
+    expect(glob(dirname(__DIR__, 2) . '/vendor/filament/filament/resources/lang/*', GLOB_ONLYDIR))
+        ->toBeArray()->not->toBeEmpty();
+});
+
+it('ships a translation for every locale Filament ships', function (string $locale): void {
+    expect(dirname(__DIR__, 2) . "/resources/lang/{$locale}/multi-source-file-upload.php")->toBeFile();
+})->with(fn (): array => array_map(
+    basename(...),
+    glob(dirname(__DIR__, 2) . '/vendor/filament/filament/resources/lang/*', GLOB_ONLYDIR) ?: [],
+));

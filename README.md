@@ -33,7 +33,7 @@ Most "upload from URL" components store the link in a separate column (`image` *
 - **Every `FileUpload` option still applies.** It **is** a `FileUpload`: `acceptedFileTypes()`, `maxSize()`, `multiple()`, image editing, file naming and visibility work unchanged. See [How it works](#how-it-works).
 - **Instant preview.** The imported file drops into the dropzone as a live upload item with a thumbnail, progress bar and remove button. See [Instant preview](#instant-preview).
 - **Safe server-side fetching.** http(s) only, private and internal addresses refused on every redirect, the connection pinned to the checked address, a size cap and a timeout. See [Security](#security).
-- **Matches your panel.** Reuses Filament's component classes and design tokens, dark mode included; English and Polish translations.
+- **Matches your panel.** Reuses Filament's component classes and design tokens, dark mode included; translated into all 64 languages Filament ships.
 - **Tested.** Covered by a Pest suite on every supported version combination.
 
 ## Requirements
@@ -153,14 +153,11 @@ If your server sends outgoing HTTP through a proxy, the proxy connects to the ta
 
 ## Translations
 
-The field ships these languages:
+The field ships in every locale Filament ships:
 
-| Language       |
-|----------------|
-| English (`en`) |
-| Polish (`pl`)  |
+`am` `ar` `az` `bg` `bn` `bs` `ca` `ckb` `cs` `da` `de` `el` `en` `es` `et` `eu` `fa` `fi` `fil` `fr` `he` `hi` `hr` `hu` `hy` `id` `it` `ja` `ka` `km` `ko` `ku` `lt` `lus` `lv` `mk` `mn` `ms` `my` `nb` `ne` `nl` `pl` `pt` `pt_BR` `ro` `ru` `sk` `sl` `sq` `sr_Cyrl` `sr_Latn` `sv` `sw` `tg` `th` `tr` `uk` `ur` `uz` `vi` `zh_CN` `zh_HK` `zh_TW`
 
-Publish them with `php artisan vendor:publish --tag="filament-multi-source-upload-translations"` to change the wording. `tests/Unit/TranslationsTest.php` checks that every locale has exactly the keys English has.
+Publish them with `php artisan vendor:publish --tag="filament-multi-source-upload-translations"` to change the wording or add a language. `tests/Unit/TranslationsTest.php` checks that every locale has exactly the keys English has, and that every locale Filament ships has a translation.
 
 ## Development
 
