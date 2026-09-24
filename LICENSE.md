@@ -1,5 +1,6 @@
 The MIT License (MIT)
 
+Copyright (c) Happenv sp. z o.o. <code@happenv.com>
 Copyright (c) Happenv <code@webard.me>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
