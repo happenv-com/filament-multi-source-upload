@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Composer\InstalledVersions;
 use Happenv\FilamentMultiSourceUpload\Exceptions\RemoteFileFetchException;
 use Happenv\FilamentMultiSourceUpload\Support\RemoteFileFetcher;
 use Illuminate\Support\Facades\Http;
@@ -278,7 +279,46 @@ it('does not pin the connection when private networks are allowed', function ():
     new RemoteFileFetcher(hostResolver: fetcherTestResolver([]))
         ->fetch('http://intranet.example.test/logo.png', allowPrivateNetworks: true, maxSizeKb: 25600);
 
-    expect($options)->not->toHaveKey('curl');
+    expect($options['curl'] ?? [])->not->toHaveKey(CURLOPT_CONNECT_TO);
+});
+
+it('sends every request through the curl handler, where the pin and the size cap apply', function (): void {
+    // A `stream` request goes to Guzzle's PHP stream handler, which ignores
+    // curl options: Guzzle 7 silently drops the pin, Guzzle 8 refuses the request.
+    Storage::fake('tmp-for-tests');
+
+    $options = [];
+    Http::fake(function ($request, array $requestOptions) use (&$options) {
+        $options[] = $requestOptions;
+
+        return count($options) === 1
+            ? Http::response('', 302, ['Location' => 'https://cdn.example.test/logo.png'])
+            : Http::response(fetcherTestPng(), 200, ['Content-Type' => 'image/png']);
+    });
+
+    new RemoteFileFetcher(hostResolver: fetcherTestResolver(['cdn.example.test' => ['93.184.216.34']]))
+        ->fetch('https://cdn.example.test/logo', allowPrivateNetworks: false, maxSizeKb: 2);
+
+    expect($options)->toHaveCount(2)->each(function ($option): void {
+        $option->not->toHaveKey('stream')
+            ->and($option->value['sink'])->toBeString()
+            ->and($option->value['curl'][CURLOPT_CONNECT_TO])->toBe(['::93.184.216.34:']);
+    });
+
+    // Guzzle 8 aborts when `progress` returns true and refuses curl's own
+    // progress options; Guzzle 7 ignores what `progress` returns.
+    if (version_compare((string) InstalledVersions::getVersion('guzzlehttp/guzzle'), '8.0.0.0-dev', '>=')) {
+        expect($options[0]['curl'])->not->toHaveKey(CURLOPT_NOPROGRESS);
+        $abort = fn (int $total, int $received): bool => $options[0]['progress']($total, $received, 0, 0);
+    } else {
+        expect($options[0])->not->toHaveKey('progress')
+            ->and($options[0]['curl'][CURLOPT_NOPROGRESS])->toBeFalse();
+        $abort = fn (int $total, int $received): bool => $options[0]['curl'][CURLOPT_XFERINFOFUNCTION](null, $total, $received, 0, 0) === 1;
+    }
+
+    expect($abort(0, 2048))->toBeFalse()
+        ->and($abort(0, 2049))->toBeTrue()
+        ->and($abort(2049, 0))->toBeTrue();
 });
 
 it('blocks addresses outside the public internet that PHP does not flag', function (string $ip): void {

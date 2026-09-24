@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Happenv\FilamentMultiSourceUpload\Support;
 
 use Closure;
+use Composer\InstalledVersions;
 use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\Psr7\UriResolver;
 use Happenv\FilamentMultiSourceUpload\Exceptions\RemoteFileFetchException;
@@ -202,22 +203,43 @@ final readonly class RemoteFileFetcher
      * Send the GET, following up to MAX_REDIRECTS redirects by hand: every
      * target passes the same scheme and address checks as the URL the user
      * entered, and every request is pinned to the address that was checked.
+     * The body is written straight to $sink, and the transfer is aborted as
+     * soon as it passes $maxBytes.
+     *
+     * The request must go through Guzzle's curl handler, the only one that
+     * honours the `curl` options: a `stream` request is sent by the PHP stream
+     * handler instead, which Guzzle 7 lets ignore the pin silently and Guzzle
+     * 8 refuses outright.
      */
-    private function request(string $url, bool $allowPrivateNetworks): Response
+    private function request(string $url, bool $allowPrivateNetworks, int $maxBytes, string $sink): Response
     {
+        // Without ext-curl Guzzle falls back to PHP streams, where the
+        // connection can be neither pinned nor cut off at the size cap.
+        // Refuse rather than fetch unprotected.
+        if (! function_exists('curl_exec') || ! function_exists('curl_multi_exec')) {
+            throw RemoteFileFetchException::unreachable();
+        }
+
         for ($redirects = 0; ; $redirects++) {
+            $tooLarge = false;
+
+            // True once the declared or received size passes the cap.
+            $overCap = static function (int $total, int $received) use ($maxBytes, &$tooLarge): bool {
+                return $tooLarge = $total > $maxBytes || $received > $maxBytes;
+            };
+
             $pin = $this->pinConnection($this->assertAllowedUrl($url, $allowPrivateNetworks));
 
             try {
                 $response = Http::withOptions([
-                    'stream' => true,
                     'allow_redirects' => false,
-                    ...$pin,
+                    'sink' => $sink,
+                    ...$this->abortOverCap($overCap, $pin),
                 ])
                     ->timeout(20)
                     ->get($url);
             } catch (Throwable) {
-                throw RemoteFileFetchException::unreachable();
+                throw $tooLarge ? RemoteFileFetchException::tooLarge() : RemoteFileFetchException::unreachable();
             }
 
             $location = $response->header('Location');
@@ -225,8 +247,6 @@ final readonly class RemoteFileFetcher
             if (! $response->redirect() || $location === '') {
                 return $response;
             }
-
-            $response->toPsrResponse()->getBody()->close();
 
             if ($redirects >= self::MAX_REDIRECTS) {
                 throw RemoteFileFetchException::unreachable();
@@ -241,12 +261,40 @@ final readonly class RemoteFileFetcher
     }
 
     /**
-     * Make curl connect to exactly the address that was checked, whatever host
-     * it reads from the URL, instead of resolving the host again. The URL is
-     * unchanged, so the Host header, TLS SNI and certificate verification still
-     * use the host name.
+     * Request options that stop the transfer once $overCap returns true, on
+     * top of the given curl options. Guzzle 8 aborts when its `progress`
+     * callback returns true, but refuses curl's own progress options; Guzzle 7
+     * ignores what `progress` returns, so there the curl callback is set
+     * directly.
      *
+     * @param  Closure(int, int): bool  $overCap
+     * @param  array<int, mixed>  $curl
      * @return array<string, mixed>
+     */
+    private function abortOverCap(Closure $overCap, array $curl): array
+    {
+        if (version_compare((string) InstalledVersions::getVersion('guzzlehttp/guzzle'), '8.0.0.0-dev', '>=')) {
+            return [
+                'curl' => $curl,
+                'progress' => static fn (int $total, int $received): bool => $overCap($total, $received),
+            ];
+        }
+
+        return [
+            'curl' => $curl + [
+                CURLOPT_NOPROGRESS => false,
+                CURLOPT_XFERINFOFUNCTION => static fn (mixed $handle, int $total, int $received): int => $overCap($total, $received) ? 1 : 0,
+            ],
+        ];
+    }
+
+    /**
+     * The curl option that makes curl connect to exactly the address that was
+     * checked, whatever host it reads from the URL, instead of resolving the
+     * host again. The URL is unchanged, so the Host header, TLS SNI and
+     * certificate verification still use the host name.
+     *
+     * @return array<int, mixed>
      */
     private function pinConnection(?string $ip): array
     {
@@ -254,17 +302,11 @@ final readonly class RemoteFileFetcher
             return [];
         }
 
-        // Guzzle falls back to PHP streams without ext-curl, where the
-        // connection cannot be pinned. Refuse rather than fetch unprotected.
-        if (! function_exists('curl_exec') || ! function_exists('curl_multi_exec')) {
-            throw RemoteFileFetchException::unreachable();
-        }
-
         $host = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) === false ? $ip : "[{$ip}]";
 
         // HOST:PORT:CONNECT-TO-HOST:CONNECT-TO-PORT; empty fields match any
         // host and keep the URL's port.
-        return ['curl' => [CURLOPT_CONNECT_TO => ["::{$host}:"]]];
+        return [CURLOPT_CONNECT_TO => ["::{$host}:"]];
     }
 
     /**
@@ -273,59 +315,29 @@ final readonly class RemoteFileFetcher
      */
     private function download(string $url, bool $allowPrivateNetworks, int $maxBytes): string
     {
-        $response = $this->request($url, $allowPrivateNetworks);
-
-        if (! $response->successful()) {
-            throw RemoteFileFetchException::unreachable();
-        }
-
-        $declared = $response->header('Content-Length');
-        if ($declared !== '' && ctype_digit($declared) && (int) $declared > $maxBytes) {
-            throw RemoteFileFetchException::tooLarge();
-        }
-
         $localPath = tempnam(sys_get_temp_dir(), 'msu_');
         if ($localPath === false) {
             throw RemoteFileFetchException::unreachable();
         }
 
-        $handle = fopen($localPath, 'wb');
-        if ($handle === false) {
-            @unlink($localPath);
-
-            throw RemoteFileFetchException::unreachable();
-        }
-
-        $stream = $response->toPsrResponse()->getBody();
-        $written = 0;
-
         try {
-            while (! $stream->eof()) {
-                $chunk = $stream->read(8192);
-                if ($chunk === '') {
-                    break;
-                }
+            $response = $this->request($url, $allowPrivateNetworks, $maxBytes, $localPath);
 
-                $written += strlen($chunk);
-                if ($written > $maxBytes) {
-                    throw RemoteFileFetchException::tooLarge();
-                }
-
-                fwrite($handle, $chunk);
+            if (! $response->successful()) {
+                throw RemoteFileFetchException::unreachable();
             }
-        } catch (RemoteFileFetchException $e) {
-            fclose($handle);
+
+            // curl aborts an oversized transfer itself; this catches whatever
+            // reached the file without passing through it.
+            $declared = $response->header('Content-Length');
+            if (($declared !== '' && ctype_digit($declared) && (int) $declared > $maxBytes) || (int) filesize($localPath) > $maxBytes) {
+                throw RemoteFileFetchException::tooLarge();
+            }
+        } catch (Throwable $exception) {
             @unlink($localPath);
 
-            throw $e;
-        } catch (Throwable) {
-            fclose($handle);
-            @unlink($localPath);
-
-            throw RemoteFileFetchException::unreachable();
+            throw $exception instanceof RemoteFileFetchException ? $exception : RemoteFileFetchException::unreachable();
         }
-
-        fclose($handle);
 
         return $localPath;
     }
