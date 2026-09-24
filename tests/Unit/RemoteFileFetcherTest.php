@@ -75,6 +75,26 @@ it('downloads a URL into a TemporaryUploadedFile with correct metadata', functio
         ->and($file->get())->toBe($png);
 });
 
+it('reports a temporary upload it cannot store as unreachable', function (bool $throws): void {
+    // Livewire keeps test uploads on this disk. A file where its upload
+    // directory should be makes every write fail: storing returns false, or
+    // throws when the disk is set to.
+    $root = sys_get_temp_dir() . '/msu-unwritable-' . uniqid();
+    mkdir($root);
+    touch("{$root}/livewire-tmp");
+    config(['filesystems.disks.tmp-for-tests' => ['driver' => 'local', 'root' => $root, 'throw' => $throws]]);
+    Http::fake(['https://cdn.example.test/*' => Http::response(fetcherTestPng(), 200, ['Content-Type' => 'image/png'])]);
+
+    try {
+        expect(fetcherTestReason(fn (): TemporaryUploadedFile => new RemoteFileFetcher(hostResolver: fn (): array => ['93.184.216.34'])
+            ->fetch('https://cdn.example.test/logo.png', allowPrivateNetworks: false, maxSizeKb: 25600)))
+            ->toBe(FETCHER_TEST_UNREACHABLE);
+    } finally {
+        array_map(unlink(...), glob("{$root}/*") ?: []);
+        rmdir($root);
+    }
+})->with(['returns false' => false, 'throws' => true]);
+
 it('rejects a file larger than the cap (by streamed bytes)', function (): void {
     Storage::fake('tmp-for-tests');
     Http::fake(['https://cdn.example.test/*' => Http::response(str_repeat('A', 3000), 200, [

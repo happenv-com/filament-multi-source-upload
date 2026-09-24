@@ -57,15 +57,45 @@ final readonly class RemoteFileFetcher
 
             $uploaded = new UploadedFile($localPath, $name, $mime, test: true);
 
-            $storedPath = FileUploadConfiguration::storeTemporaryFile(
-                $uploaded,
-                FileUploadConfiguration::disk(),
-            );
+            try {
+                $storedPath = $this->storeTemporaryFile($uploaded);
+            } catch (Throwable) {
+                $storedPath = false;
+            }
+
+            // The temporary disk refused the file: report it like any other
+            // failed import rather than hand Livewire an empty file name.
+            if ($storedPath === false) {
+                throw RemoteFileFetchException::unreachable();
+            }
 
             return TemporaryUploadedFile::createFromLivewire(basename($storedPath));
         } finally {
             @unlink($localPath);
         }
+    }
+
+    /**
+     * Store the file where Livewire keeps its temporary uploads, the way
+     * Livewire's own upload endpoint does. Livewire 4 has a method for it that
+     * also records the original name beside the file; Livewire 3 (Filament 4)
+     * embeds the original name in the stored file name instead.
+     */
+    private function storeTemporaryFile(UploadedFile $file): string | false
+    {
+        $disk = FileUploadConfiguration::disk();
+
+        // Always true for the Livewire PHPStan analyses against (4); false on Livewire 3.
+        // @phpstan-ignore function.alreadyNarrowedType
+        if (method_exists(FileUploadConfiguration::class, 'storeTemporaryFile')) {
+            return FileUploadConfiguration::storeTemporaryFile($file, $disk);
+        }
+
+        return $file->storeAs(
+            '/' . FileUploadConfiguration::path(),
+            TemporaryUploadedFile::generateHashNameWithOriginalNameEmbedded($file),
+            ['disk' => $disk],
+        );
     }
 
     /**
