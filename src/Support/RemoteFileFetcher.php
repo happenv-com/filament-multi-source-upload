@@ -114,6 +114,11 @@ final readonly class RemoteFileFetcher
             return [$host];
         }
 
+        $numeric = $this->numericIpv4($host);
+        if ($numeric !== null) {
+            return [$numeric];
+        }
+
         $resolver = $this->hostResolver ?? static fn (string $h): array => gethostbynamel($h) ?: [];
         $ips = $resolver($host);
 
@@ -124,6 +129,61 @@ final readonly class RemoteFileFetcher
         }
 
         return $ips;
+    }
+
+    /**
+     * The address a numeric IPv4 host stands for in any form inet_aton()
+     * accepts — hex or octal parts (`0x7f.0.0.1`, `0177.0.0.1`), fewer than
+     * four parts (`127.1`) or a single number (`2130706433`) — or `null` when
+     * the host is not numeric. Resolvers disagree on these forms (glibc does
+     * not resolve hex parts), so they are read here to be judged the same way
+     * everywhere.
+     */
+    private function numericIpv4(string $host): ?string
+    {
+        $parts = explode('.', $host);
+
+        if (count($parts) > 4) {
+            return null;
+        }
+
+        $values = [];
+
+        foreach ($parts as $part) {
+            $value = match (true) {
+                preg_match('/^0x[0-9a-f]*$/i', $part) === 1 => hexdec(substr($part, 2) ?: '0'),
+                preg_match('/^0[0-7]*$/', $part) === 1 => octdec($part),
+                preg_match('/^[1-9][0-9]*$/', $part) === 1 => (float) $part,
+                default => null,
+            };
+
+            if ($value === null) {
+                return null;
+            }
+
+            $values[] = $value;
+        }
+
+        // Every part but the last is one byte; the last fills the bytes left.
+        $last = (float) array_pop($values);
+
+        foreach ($values as $value) {
+            if ($value > 255) {
+                return null;
+            }
+        }
+
+        if ($last >= 256 ** (4 - count($values))) {
+            return null;
+        }
+
+        $address = (int) $last;
+
+        foreach ($values as $index => $value) {
+            $address += (int) $value << (8 * (3 - $index));
+        }
+
+        return long2ip($address);
     }
 
     private function isBlockedIp(string $ip): bool
