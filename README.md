@@ -1,11 +1,17 @@
 # Filament Multi-Source Upload
 
+<div class="filament-hidden">
+
+![Filament Multi-Source Upload](art/banner.png)
+
+</div>
+
 [![Latest Version](https://img.shields.io/github/v/release/happenv-com/filament-multi-source-upload?style=flat-square&label=version)](https://github.com/happenv-com/filament-multi-source-upload/releases)
 [![Tests](https://img.shields.io/github/actions/workflow/status/happenv-com/filament-multi-source-upload/tests.yml?label=tests&style=flat-square)](https://github.com/happenv-com/filament-multi-source-upload/actions/workflows/tests.yml)
 [![PHPStan](https://img.shields.io/github/actions/workflow/status/happenv-com/filament-multi-source-upload/phpstan.yml?label=phpstan&style=flat-square)](https://github.com/happenv-com/filament-multi-source-upload/actions/workflows/phpstan.yml)
 [![Quality](https://img.shields.io/github/actions/workflow/status/happenv-com/filament-multi-source-upload/quality.yml?label=code%20quality&style=flat-square)](https://github.com/happenv-com/filament-multi-source-upload/actions/workflows/quality.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/happenv-com/filament-multi-source-upload.svg?style=flat-square)](https://packagist.org/packages/happenv-com/filament-multi-source-upload)
-[![License](https://img.shields.io/github/license/happenv-com/filament-multi-source-upload.svg?style=flat-square)](LICENSE.md)
+[![License](https://img.shields.io/github/license/happenv-com/filament-multi-source-upload.svg?style=flat-square)](https://github.com/happenv-com/filament-multi-source-upload/blob/1.x/LICENSE.md)
 
 A drop-in replacement for Filament's `FileUpload` field that lets users add a file **from their disk or from a URL** — and in **both** cases the file is downloaded and stored on your target disk, exactly as if it had been uploaded.
 
@@ -179,29 +185,29 @@ npm run lint    # Prettier check, as in CI (`npm run format` fixes it)
 
 ## Upgrading
 
-Breaking changes and how to migrate are described in [UPGRADING](UPGRADING.md) for every major version.
+Breaking changes and how to migrate are described in [UPGRADING](https://github.com/happenv-com/filament-multi-source-upload/blob/1.x/UPGRADING.md) for every major version.
 
 ## Changelog
 
-See [CHANGELOG](CHANGELOG.md) and [GitHub releases](https://github.com/happenv-com/filament-multi-source-upload/releases) for what has changed recently.
+See [CHANGELOG](https://github.com/happenv-com/filament-multi-source-upload/blob/1.x/CHANGELOG.md) and [GitHub releases](https://github.com/happenv-com/filament-multi-source-upload/releases) for what has changed recently.
 
 ## Contributing
 
-See [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
+See [CONTRIBUTING](https://github.com/happenv-com/filament-multi-source-upload/blob/1.x/.github/CONTRIBUTING.md) for details.
 
 ## Security vulnerabilities
 
-Please review [our security policy](.github/SECURITY.md) on how to report security vulnerabilities.
+Please review [our security policy](https://github.com/happenv-com/filament-multi-source-upload/blob/1.x/.github/SECURITY.md) on how to report security vulnerabilities.
 
 ## Credits
 
 - [Happenv sp. z o.o.](https://happenv.com)
 - [webard](https://github.com/webard)
-- [All contributors](../../contributors)
+- [All contributors](https://github.com/happenv-com/filament-multi-source-upload/contributors)
 
 ## License
 
-The MIT License (MIT). See [License File](LICENSE.md) for more information.
+The MIT License (MIT). See [License File](https://github.com/happenv-com/filament-multi-source-upload/blob/1.x/LICENSE.md) for more information.
 
 ---
 
