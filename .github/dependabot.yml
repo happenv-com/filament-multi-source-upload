@@ -28,8 +28,9 @@ updates:
       - 'dependencies'
     groups:
       github-actions:
-        patterns:
-          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
 
   - package-ecosystem: 'composer'
     directory: '/'
