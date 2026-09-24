@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Filament\Forms\Components\FileUpload;
+use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Happenv\FilamentMultiSourceUpload\MultiSourceFileUpload;
 
@@ -19,7 +20,7 @@ it('resolves the package translation namespace', function (): void {
 
 it('registers its stylesheet as a Filament asset', function (): void {
     $ids = array_map(
-        fn ($asset): string => $asset->getId(),
+        fn (Css $asset): string => $asset->getId(),
         FilamentAsset::getStyles(),
     );
 

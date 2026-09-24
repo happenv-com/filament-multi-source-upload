@@ -24,7 +24,7 @@ final class FilamentMultiSourceUploadServiceProvider extends PackageServiceProvi
         FilamentAsset::register([
             Css::make(
                 'filament-multi-source-upload',
-                __DIR__.'/../resources/dist/filament-multi-source-upload.css',
+                __DIR__ . '/../resources/dist/filament-multi-source-upload.css',
             ),
         ], package: 'happenv-com/filament-multi-source-upload');
     }

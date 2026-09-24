@@ -67,7 +67,7 @@ abstract class TestCase extends Orchestra
 
     protected function getEnvironmentSetUp($app): void
     {
-        $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('msu-test-key-32b', 2)));
+        $app['config']->set('app.key', 'base64:' . base64_encode(str_repeat('msu-test-key-32b', 2)));
         $app['config']->set('filesystems.default', 'local');
 
         // Livewire binds its mechanisms as shared container instances during

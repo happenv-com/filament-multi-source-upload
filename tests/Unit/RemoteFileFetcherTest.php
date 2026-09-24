@@ -64,7 +64,7 @@ it('downloads a URL into a TemporaryUploadedFile with correct metadata', functio
         'Content-Length' => (string) strlen($png),
     ])]);
 
-    $file = (new RemoteFileFetcher(hostResolver: fn () => ['93.184.216.34']))
+    $file = new RemoteFileFetcher(hostResolver: fn (): array => ['93.184.216.34'])
         ->fetch('https://cdn.example.test/logo.png', allowPrivateNetworks: false, maxSizeKb: 25600);
 
     expect($file->getClientOriginalName())->toBe('logo.png')
@@ -79,7 +79,7 @@ it('rejects a file larger than the cap (by streamed bytes)', function (): void {
         'Content-Type' => 'image/png',
     ])]);
 
-    (new RemoteFileFetcher(hostResolver: fn () => ['93.184.216.34']))
+    new RemoteFileFetcher(hostResolver: fn (): array => ['93.184.216.34'])
         ->fetch('https://cdn.example.test/big.png', allowPrivateNetworks: false, maxSizeKb: 2); // 2 KB cap
 })->throws(RemoteFileFetchException::class);
 
@@ -90,7 +90,7 @@ it('rejects when the declared Content-Length exceeds the cap', function (): void
         'Content-Length' => (string) (5 * 1024 * 1024),
     ])]);
 
-    (new RemoteFileFetcher(hostResolver: fn () => ['93.184.216.34']))
+    new RemoteFileFetcher(hostResolver: fn (): array => ['93.184.216.34'])
         ->fetch('https://cdn.example.test/big.png', allowPrivateNetworks: false, maxSizeKb: 1024);
 })->throws(RemoteFileFetchException::class);
 
@@ -100,7 +100,7 @@ it('derives an extension from the mime type when the URL path has none', functio
         'Content-Type' => 'image/png',
     ])]);
 
-    $file = (new RemoteFileFetcher(hostResolver: fn () => ['93.184.216.34']))
+    $file = new RemoteFileFetcher(hostResolver: fn (): array => ['93.184.216.34'])
         ->fetch('https://cdn.example.test/download', allowPrivateNetworks: false, maxSizeKb: 25600);
 
     expect($file->getClientOriginalExtension())->toBe('png');

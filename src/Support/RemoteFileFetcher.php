@@ -14,10 +14,10 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Symfony\Component\Mime\MimeTypes;
 use Throwable;
 
-final class RemoteFileFetcher
+final readonly class RemoteFileFetcher
 {
     /** @param  (Closure(string): array<string>)|null  $hostResolver */
-    public function __construct(private readonly ?Closure $hostResolver = null) {}
+    public function __construct(private ?Closure $hostResolver = null) {}
 
     /**
      * @throws RemoteFileFetchException when the URL is disallowed, unreachable, or too large
