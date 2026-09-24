@@ -2,6 +2,18 @@
 
 All notable changes to `filament-multi-source-upload` are documented in this file. Each section is written automatically from the GitHub release notes when a release is published — do not edit it by hand.
 
+## v1.2.0 - 2026-09-24
+
+<!-- Release notes generated using configuration in .github/release.yml at 1.x -->
+### What's Changed
+
+#### Other
+
+* fix: send URL imports through curl so the pin and size cap apply by @webard in https://github.com/happenv-com/filament-multi-source-upload/pull/5
+* feat: support Filament 4 by @webard in https://github.com/happenv-com/filament-multi-source-upload/pull/6
+
+**Full Changelog**: https://github.com/happenv-com/filament-multi-source-upload/compare/v1.1.0...v1.2.0
+
 ## v1.1.0 - 2026-09-24
 
 <!-- Release notes generated using configuration in .github/release.yml at 1.x -->
