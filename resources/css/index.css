@@ -62,5 +62,5 @@
 
 /* Inline import error, styled like Filament's own field error message. */
 .fi-msu-error {
-    @apply text-sm text-danger-600 dark:text-danger-400;
+    @apply text-danger-600 dark:text-danger-400 text-sm;
 }
