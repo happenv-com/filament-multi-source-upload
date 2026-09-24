@@ -6,6 +6,7 @@ namespace Happenv\FilamentMultiSourceUpload\Tests;
 
 use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
 use BladeUI\Icons\BladeIconsServiceProvider;
+use ErrorException;
 use Filament\Actions\ActionsServiceProvider;
 use Filament\Facades\Filament;
 use Filament\FilamentServiceProvider;
@@ -21,7 +22,6 @@ use Happenv\FilamentMultiSourceUpload\Tests\Fixtures\TestPanelProvider;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\ViewErrorBag;
 use Livewire\LivewireServiceProvider;
-use Livewire\Mechanisms\DataStore;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
@@ -29,6 +29,22 @@ abstract class TestCase extends Orchestra
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Laravel only logs deprecations. Fail the test when the package's OWN
+        // code triggers one, so it is fixed before the next PHP / Laravel /
+        // Filament release turns it into an error.
+        $sourcePath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR;
+
+        $previousHandler = set_error_handler(function (int $level, string $message, string $file = '', int $line = 0) use (&$previousHandler, $sourcePath): bool {
+            if (in_array($level, [E_DEPRECATED, E_USER_DEPRECATED], true) && str_starts_with($file, $sourcePath)) {
+                throw new ErrorException($message, 0, $level, $file, $line);
+            }
+
+            // Laravel's handler returns nothing once it has logged a deprecation;
+            // only an explicit `false` hands the error back to PHP, which would
+            // print it and make the test risky.
+            return $previousHandler !== null && $previousHandler($level, $message, $file, $line) !== false;
+        });
 
         // Fail fast on any HTTP call that a test forgot to fake, instead of
         // hitting the network (the RemoteFileFetcher tests rely on this).
@@ -40,6 +56,13 @@ abstract class TestCase extends Orchestra
         $this->app['view']->share('errors', new ViewErrorBag);
 
         Filament::setCurrentPanel('admin');
+    }
+
+    protected function tearDown(): void
+    {
+        restore_error_handler();
+
+        parent::tearDown();
     }
 
     /**
@@ -69,12 +92,5 @@ abstract class TestCase extends Orchestra
     {
         $app['config']->set('app.key', 'base64:' . base64_encode(str_repeat('msu-test-key-32b', 2)));
         $app['config']->set('filesystems.default', 'local');
-
-        // Livewire binds its mechanisms as shared container instances during
-        // registration; under testbench that binding does not stick, so the
-        // WeakMap-backed DataStore is re-created on every resolve and component
-        // state (e.g. the validation error bag) is lost mid-render. Force it to
-        // be a real singleton.
-        $app->singleton(DataStore::class);
     }
 }
