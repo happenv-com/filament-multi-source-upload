@@ -75,6 +75,17 @@ it('downloads a URL into a TemporaryUploadedFile with correct metadata', functio
         ->and($file->get())->toBe($png);
 });
 
+it('identifies itself with a User-Agent, which hosts like Wikimedia require', function (): void {
+    Storage::fake('tmp-for-tests');
+    Http::fake(['https://cdn.example.test/*' => Http::response(fetcherTestPng(), 200, ['Content-Type' => 'image/png'])]);
+
+    new RemoteFileFetcher(hostResolver: fn (): array => ['93.184.216.34'])
+        ->fetch('https://cdn.example.test/logo.png', allowPrivateNetworks: false, maxSizeKb: 25600);
+
+    Http::assertSent(fn ($request): bool => str_starts_with($request->header('User-Agent')[0] ?? '', 'filament-multi-source-upload/')
+        && str_contains($request->header('User-Agent')[0], 'github.com/happenv-com/filament-multi-source-upload'));
+});
+
 it('reports a temporary upload it cannot store as unreachable', function (bool $throws): void {
     // Livewire keeps test uploads on this disk. A file where its upload
     // directory should be makes every write fail: storing returns false, or

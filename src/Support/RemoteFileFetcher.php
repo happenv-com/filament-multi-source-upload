@@ -261,11 +261,12 @@ final readonly class RemoteFileFetcher
             $pin = $this->pinConnection($this->assertAllowedUrl($url, $allowPrivateNetworks));
 
             try {
-                $response = Http::withOptions([
-                    'allow_redirects' => false,
-                    'sink' => $sink,
-                    ...$this->abortOverCap($overCap, $pin),
-                ])
+                $response = Http::withHeaders(['User-Agent' => self::userAgent()])
+                    ->withOptions([
+                        'allow_redirects' => false,
+                        'sink' => $sink,
+                        ...$this->abortOverCap($overCap, $pin),
+                    ])
                     ->timeout(20)
                     ->get($url);
             } catch (Throwable) {
@@ -343,6 +344,19 @@ final readonly class RemoteFileFetcher
      * Stream the response into a local temp file, aborting hard once the byte
      * cap is exceeded so a hostile/oversized source cannot exhaust memory.
      */
+    /**
+     * Identify the fetcher. Wikimedia, GitHub's raw CDN and a good share of
+     * image hosts answer an empty or generic User-Agent with 403.
+     */
+    public static function userAgent(): string
+    {
+        $version = InstalledVersions::isInstalled('happenv-com/filament-multi-source-upload')
+            ? (InstalledVersions::getPrettyVersion('happenv-com/filament-multi-source-upload') ?? 'dev')
+            : 'dev';
+
+        return "filament-multi-source-upload/{$version} (+https://github.com/happenv-com/filament-multi-source-upload)";
+    }
+
     private function download(string $url, bool $allowPrivateNetworks, int $maxBytes): string
     {
         $localPath = tempnam(sys_get_temp_dir(), 'msu_');
