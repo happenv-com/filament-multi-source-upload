@@ -6,6 +6,7 @@ namespace Happenv\FilamentMultiSourceUpload;
 
 use Closure;
 use Filament\Forms\Components\FileUpload;
+use Filament\Schemas\Components\View;
 use Filament\Support\Components\Attributes\ExposedLivewireMethod;
 use Happenv\FilamentMultiSourceUpload\Exceptions\RemoteFileFetchException;
 use Happenv\FilamentMultiSourceUpload\Support\RemoteFileFetcher;
@@ -31,11 +32,28 @@ class MultiSourceFileUpload extends FileUpload
     {
         parent::setUp();
 
-        // We render our own label + source switch on one row inside the field
-        // content (so we fully control the layout and share one Alpine scope),
-        // so hide the wrapper's own visible label to avoid a duplicate. It stays
-        // available to screen readers.
-        $this->hiddenLabel(fn (): bool => $this->hasUrlImport());
+        // The source switch joins Filament's own label row, after the hint,
+        // hint icon and hint actions the field already renders there — so a
+        // `->hint()` or `->hintAction()` on the field keeps its place and the
+        // label stays the wrapper's (accessible, inline-label aware). The
+        // switch talks to the panes below through a `msu-tab` event keyed by
+        // the field, since the two live in different Alpine scopes.
+        $hints = $this->childComponents[static::AFTER_LABEL_SCHEMA_KEY] ?? [];
+
+        $this->afterLabel(fn (MultiSourceFileUpload $component): array => [
+            ...($component->evaluate($hints) ?? []),
+            ...($component->hasUrlImport() ? [$component->makeSourceSwitch()] : []),
+        ]);
+    }
+
+    protected function makeSourceSwitch(): View
+    {
+        return View::make('filament-multi-source-upload::components.source-switch')
+            ->viewData([
+                'key' => $this->getKey(),
+                'fileTabLabel' => $this->getFileTabLabel(),
+                'urlTabLabel' => $this->getUrlTabLabel(),
+            ]);
     }
 
     public function urlImport(bool | Closure $condition = true): static
@@ -111,10 +129,6 @@ class MultiSourceFileUpload extends FileUpload
         return view('filament-multi-source-upload::components.multi-source-file-upload', [
             'filePane' => parent::toEmbeddedHtml(),
             'key' => $this->getKey(),
-            'label' => $this->getLabel(),
-            'isRequired' => $this->isMarkedAsRequired(),
-            'fileTabLabel' => $this->getFileTabLabel(),
-            'urlTabLabel' => $this->getUrlTabLabel(),
             'urlPlaceholder' => __('filament-multi-source-upload::multi-source-file-upload.url_placeholder'),
             'importLabel' => __('filament-multi-source-upload::multi-source-file-upload.import'),
             'genericErrorMessage' => __('filament-multi-source-upload::multi-source-file-upload.import_failed'),

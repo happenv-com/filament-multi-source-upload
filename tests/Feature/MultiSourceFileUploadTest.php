@@ -80,6 +80,16 @@ it('renders the source switch and drives FilePond from the URL pane', function (
         ->html();
 
     expect($html)->toContain('fi-msu-switch')
+        // The switch is an after-label component: Filament's own label row
+        // stays, and so do the field's hint and hint actions beside it.
+        ->and($html)->toContain('fi-fo-field-label-col')
+        ->and($html)->toContain('Logo')
+        ->and($html)->toContain('Square, please')
+        ->and($html)->toContain('Look it up')
+        ->and($html)->not->toContain('fi-msu-header')
+        ->and(substr_count($html, 'fi-fo-field-label-content'))->toBe(1)
+        ->and($html)->toContain('$dispatch(\'msu-tab\', { key: \'form.logo-upload\', tab: \'url\' })')
+        ->and($html)->toContain('x-on:msu-tab.window="followSwitch($event)"')
         // The import button no longer lives in a companion Livewire state; it
         // fetches server-side then hands the file to FilePond's own pipeline.
         ->and($html)->not->toContain('logo_path__url')
