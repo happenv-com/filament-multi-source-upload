@@ -35,7 +35,7 @@
         "security": "https://github.com/happenv-com/filament-multi-source-upload/security/policy"
     },
     "require": {
-        "php": "^8.5",
+        "php": "^8.4",
         "composer-runtime-api": "^2.2",
         "filament/filament": "^4.12.0 || ^5.7.0",
         "livewire/livewire": "^3.7 || ^4.0",

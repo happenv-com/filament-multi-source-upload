@@ -46,7 +46,7 @@ Most "upload from URL" components store the link in a separate column (`image` *
 
 | Package  | Versions                       |
 |----------|--------------------------------|
-| PHP      | 8.5                            |
+| PHP      | 8.4, 8.5                       |
 | Laravel  | 13                             |
 | Filament | 4 (`^4.12.0`), 5 (`^5.7.0`)    |
 | Livewire | 3 (Filament 4), 4 (Filament 5) |
