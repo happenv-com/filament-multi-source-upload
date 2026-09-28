@@ -90,6 +90,10 @@ it('renders the source switch and drives FilePond from the URL pane', function (
         ->and(substr_count($html, 'fi-fo-field-label-content'))->toBe(1)
         ->and($html)->toContain('$dispatch(\'msu-tab\', { key: \'form.logo-upload\', tab: \'url\' })')
         ->and($html)->toContain('x-on:msu-tab.window="followSwitch($event)"')
+        // Both panes live inside the field wrapper, below the label row —
+        // so the row (and the switch in it) survives showing the URL pane.
+        ->and(preg_match('/data-field-wrapper[\s\S]*fi-msu-switch[\s\S]*data-msu-tabs[\s\S]*wire:ignore/', $html))->toBe(1)
+        ->and(strpos($html, 'data-field-wrapper'))->toBeLessThan(strpos($html, 'data-msu-tabs'))
         // The import button no longer lives in a companion Livewire state; it
         // fetches server-side then hands the file to FilePond's own pipeline.
         ->and($html)->not->toContain('logo_path__url')

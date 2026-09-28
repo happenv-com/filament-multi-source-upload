@@ -8,8 +8,10 @@ use Closure;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Components\View;
 use Filament\Support\Components\Attributes\ExposedLivewireMethod;
+use Filament\Support\Enums\VerticalAlignment;
 use Happenv\FilamentMultiSourceUpload\Exceptions\RemoteFileFetchException;
 use Happenv\FilamentMultiSourceUpload\Support\RemoteFileFetcher;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use League\Flysystem\UnableToCheckFileExistence;
@@ -120,19 +122,35 @@ class MultiSourceFileUpload extends FileUpload
             ?? __('filament-multi-source-upload::multi-source-file-upload.url_tab');
     }
 
-    public function toEmbeddedHtml(): string
-    {
-        if (! $this->hasUrlImport()) {
-            return parent::toEmbeddedHtml();
+    /**
+     * The file pane is the field's own content; the URL pane joins it here,
+     * inside the field wrapper, so the label row (label, hints, hint actions
+     * and the source switch) stays put whichever pane is showing.
+     *
+     * @internal Filament marks wrapEmbeddedHtml() internal; it is the one
+     * seam between a field's content and its wrapper, hence overridden here.
+     *
+     * @param  array<string, mixed>  $extraWrapperAttributes
+     */
+    public function wrapEmbeddedHtml(
+        string $html,
+        array $extraWrapperAttributes = [],
+        ?VerticalAlignment $inlineLabelVerticalAlignment = null,
+        string | Htmlable | null $labelPrefix = null,
+        string | Htmlable | null $labelSuffix = null,
+        string $labelTag = 'label',
+    ): string {
+        if ($this->hasUrlImport()) {
+            $html = view('filament-multi-source-upload::components.multi-source-file-upload', [
+                'filePane' => $html,
+                'key' => $this->getKey(),
+                'urlPlaceholder' => __('filament-multi-source-upload::multi-source-file-upload.url_placeholder'),
+                'importLabel' => __('filament-multi-source-upload::multi-source-file-upload.import'),
+                'genericErrorMessage' => __('filament-multi-source-upload::multi-source-file-upload.import_failed'),
+            ])->render();
         }
 
-        return view('filament-multi-source-upload::components.multi-source-file-upload', [
-            'filePane' => parent::toEmbeddedHtml(),
-            'key' => $this->getKey(),
-            'urlPlaceholder' => __('filament-multi-source-upload::multi-source-file-upload.url_placeholder'),
-            'importLabel' => __('filament-multi-source-upload::multi-source-file-upload.import'),
-            'genericErrorMessage' => __('filament-multi-source-upload::multi-source-file-upload.import_failed'),
-        ])->render();
+        return parent::wrapEmbeddedHtml($html, $extraWrapperAttributes, $inlineLabelVerticalAlignment, $labelPrefix, $labelSuffix, $labelTag);
     }
 
     /**
