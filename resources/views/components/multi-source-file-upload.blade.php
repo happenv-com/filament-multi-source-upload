@@ -3,6 +3,23 @@
     class="fi-msu"
     x-data="{
         tab: 'file',
+
+        // The source switch sits in the field's label row, outside this
+        // scope: it announces its choice as a `msu-tab` event keyed by the
+        // field, and hears back when the panes change tab on their own
+        // (an import lands on the file pane).
+        init() {
+            this.$watch('tab', (tab) => this.$dispatch('msu-tab', { key: @js($key), tab }))
+        },
+
+        followSwitch(event) {
+            if (event.detail?.key !== @js($key) || event.detail?.tab === this.tab) {
+                return
+            }
+
+            this.tab = event.detail.tab
+            this.error = null
+        },
         importing: false,
         url: '',
         error: null,
@@ -65,43 +82,8 @@
             }
         },
     }"
+    x-on:msu-tab.window="followSwitch($event)"
 >
-    {{-- Our own label + source switch on one row. The field's native label is
-         hidden (kept for screen readers), so this is the only visible label. --}}
-    <div class="fi-msu-header">
-        @if (filled($label))
-            <span class="fi-fo-field-label" aria-hidden="true">
-                <span class="fi-fo-field-label-content">
-                    {{ $label }}@if ($isRequired)<sup class="fi-fo-field-label-required-mark">*</sup>@endif
-                </span>
-            </span>
-        @endif
-
-        <div class="fi-msu-switch" role="tablist">
-            <button
-                type="button"
-                role="tab"
-                class="fi-msu-switch-option"
-                x-on:click="tab = 'file'; error = null"
-                x-bind:class="{ 'fi-active': tab === 'file' }"
-                x-bind:aria-selected="tab === 'file'"
-            >
-                {{ $fileTabLabel }}
-            </button>
-
-            <button
-                type="button"
-                role="tab"
-                class="fi-msu-switch-option"
-                x-on:click="tab = 'url'; error = null"
-                x-bind:class="{ 'fi-active': tab === 'url' }"
-                x-bind:aria-selected="tab === 'url'"
-            >
-                {{ $urlTabLabel }}
-            </button>
-        </div>
-    </div>
-
     <div x-ref="filePane" x-show="tab === 'file'">
         {!! $filePane !!}
     </div>

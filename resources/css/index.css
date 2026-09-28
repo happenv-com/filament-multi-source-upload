@@ -15,22 +15,8 @@
     @apply flex flex-col gap-2;
 }
 
-/* Label (left) + source switch (right) on one row. */
-.fi-msu-header {
-    @apply flex items-center gap-3;
-}
-
-/* Our label lives inside the field content (not the wrapper Filament scopes its
-   label styles to), so restate the exact same styles here. */
-.fi-msu .fi-fo-field-label-content {
-    @apply text-sm font-medium text-gray-950 dark:text-white;
-}
-
-.fi-msu .fi-fo-field-label-required-mark {
-    @apply text-danger-600 dark:text-danger-400 font-medium;
-}
-
-/* Compact segmented source switch (pushed to the right, beside the label). */
+/* Compact segmented source switch — an after-label component, so it sits at
+   the end of the field's own label row, after any hint and hint actions. */
 .fi-msu-switch {
     @apply ms-auto inline-flex w-fit items-stretch overflow-hidden rounded-lg border border-gray-300 text-xs dark:border-white/10;
 }
