@@ -7,6 +7,50 @@
         url: '',
         error: null,
 
+        // A link — or an image — dragged in from another browser tab arrives
+        // as text/uri-list. That URL is worth more than the File the browser
+        // may attach alongside it: the dragged File is named after the URL's
+        // last segment (often extension-less, e.g. «image») and typed after
+        // whatever the page served, so FilePond's type check refuses it;
+        // the server-side import sniffs the real type from the bytes and
+        // names the file properly. Local files carry no URL and stay
+        // FilePond's business.
+        droppedUrl(event) {
+            const types = Array.from(event.dataTransfer?.types ?? [])
+
+            if (! types.includes('text/uri-list')) {
+                return null
+            }
+
+            const url = (event.dataTransfer.getData('text/uri-list') || '')
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .find((line) => line !== '' && ! line.startsWith('#')) ?? ''
+
+            return /^https?:\/\//i.test(url) ? url : null
+        },
+
+        async importDrop(event) {
+            const url = this.droppedUrl(event)
+
+            if (url === null) {
+                return
+            }
+
+            event.preventDefault()
+            event.stopPropagation()
+
+            this.url = url
+            await this.importFromUrl()
+
+            // A failed drop must not fail silently: the file pane is showing,
+            // the error lives on the URL pane — bring that pane forward so the
+            // link and the reason are visible and can be retried or edited.
+            if (this.error) {
+                this.tab = 'url'
+            }
+        },
+
         async importFromUrl() {
             const url = this.url.trim()
 
@@ -65,6 +109,8 @@
             }
         },
     }"
+    x-on:dragover="if (Array.from($event.dataTransfer?.types ?? []).includes('text/uri-list')) $event.preventDefault()"
+    x-on:drop.capture="importDrop($event)"
 >
     {{-- Our own label + source switch on one row. The field's native label is
          hidden (kept for screen readers), so this is the only visible label. --}}
