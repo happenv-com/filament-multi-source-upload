@@ -6,9 +6,12 @@ namespace Happenv\FilamentMultiSourceUpload;
 
 use Closure;
 use Filament\Forms\Components\FileUpload;
+use Filament\Schemas\Components\View;
 use Filament\Support\Components\Attributes\ExposedLivewireMethod;
+use Filament\Support\Enums\VerticalAlignment;
 use Happenv\FilamentMultiSourceUpload\Exceptions\RemoteFileFetchException;
 use Happenv\FilamentMultiSourceUpload\Support\RemoteFileFetcher;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use League\Flysystem\UnableToCheckFileExistence;
@@ -31,11 +34,28 @@ class MultiSourceFileUpload extends FileUpload
     {
         parent::setUp();
 
-        // We render our own label + source switch on one row inside the field
-        // content (so we fully control the layout and share one Alpine scope),
-        // so hide the wrapper's own visible label to avoid a duplicate. It stays
-        // available to screen readers.
-        $this->hiddenLabel(fn (): bool => $this->hasUrlImport());
+        // The source switch joins Filament's own label row, after the hint,
+        // hint icon and hint actions the field already renders there — so a
+        // `->hint()` or `->hintAction()` on the field keeps its place and the
+        // label stays the wrapper's (accessible, inline-label aware). The
+        // switch talks to the panes below through a `msu-tab` event keyed by
+        // the field, since the two live in different Alpine scopes.
+        $hints = $this->childComponents[static::AFTER_LABEL_SCHEMA_KEY] ?? [];
+
+        $this->afterLabel(fn (MultiSourceFileUpload $component): array => [
+            ...($component->evaluate($hints) ?? []),
+            ...($component->hasUrlImport() ? [$component->makeSourceSwitch()] : []),
+        ]);
+    }
+
+    protected function makeSourceSwitch(): View
+    {
+        return View::make('filament-multi-source-upload::components.source-switch')
+            ->viewData([
+                'key' => $this->getKey(),
+                'fileTabLabel' => $this->getFileTabLabel(),
+                'urlTabLabel' => $this->getUrlTabLabel(),
+            ]);
     }
 
     public function urlImport(bool | Closure $condition = true): static
@@ -102,23 +122,35 @@ class MultiSourceFileUpload extends FileUpload
             ?? __('filament-multi-source-upload::multi-source-file-upload.url_tab');
     }
 
-    public function toEmbeddedHtml(): string
-    {
-        if (! $this->hasUrlImport()) {
-            return parent::toEmbeddedHtml();
+    /**
+     * The file pane is the field's own content; the URL pane joins it here,
+     * inside the field wrapper, so the label row (label, hints, hint actions
+     * and the source switch) stays put whichever pane is showing.
+     *
+     * @internal Filament marks wrapEmbeddedHtml() internal; it is the one
+     * seam between a field's content and its wrapper, hence overridden here.
+     *
+     * @param  array<string, mixed>  $extraWrapperAttributes
+     */
+    public function wrapEmbeddedHtml(
+        string $html,
+        array $extraWrapperAttributes = [],
+        ?VerticalAlignment $inlineLabelVerticalAlignment = null,
+        string | Htmlable | null $labelPrefix = null,
+        string | Htmlable | null $labelSuffix = null,
+        string $labelTag = 'label',
+    ): string {
+        if ($this->hasUrlImport()) {
+            $html = view('filament-multi-source-upload::components.multi-source-file-upload', [
+                'filePane' => $html,
+                'key' => $this->getKey(),
+                'urlPlaceholder' => __('filament-multi-source-upload::multi-source-file-upload.url_placeholder'),
+                'importLabel' => __('filament-multi-source-upload::multi-source-file-upload.import'),
+                'genericErrorMessage' => __('filament-multi-source-upload::multi-source-file-upload.import_failed'),
+            ])->render();
         }
 
-        return view('filament-multi-source-upload::components.multi-source-file-upload', [
-            'filePane' => parent::toEmbeddedHtml(),
-            'key' => $this->getKey(),
-            'label' => $this->getLabel(),
-            'isRequired' => $this->isMarkedAsRequired(),
-            'fileTabLabel' => $this->getFileTabLabel(),
-            'urlTabLabel' => $this->getUrlTabLabel(),
-            'urlPlaceholder' => __('filament-multi-source-upload::multi-source-file-upload.url_placeholder'),
-            'importLabel' => __('filament-multi-source-upload::multi-source-file-upload.import'),
-            'genericErrorMessage' => __('filament-multi-source-upload::multi-source-file-upload.import_failed'),
-        ])->render();
+        return parent::wrapEmbeddedHtml($html, $extraWrapperAttributes, $inlineLabelVerticalAlignment, $labelPrefix, $labelSuffix, $labelTag);
     }
 
     /**
