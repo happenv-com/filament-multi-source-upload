@@ -35,6 +35,7 @@ Most "upload from URL" components store the link in a separate column (`image` *
 ## Key features
 
 - **A file from disk or from a link, in one field.** A compact *File / From URL* switch beside the label; the pasted link is imported with one click. See [Usage](#usage).
+- **Drag it in from another tab.** A link — or an image — dropped onto the field from another browser tab is imported from its URL, so the field never has to trust the extension-less, mistyped file a browser drag attaches. See [Dropping a link](#dropping-a-link-or-an-image-from-another-tab).
 - **Always stored on your disk.** An imported file goes through the field's own uploader and save pipeline, so it lands on `disk()` / `directory()` exactly like a dragged-in file — one string column, no remote references.
 - **Every `FileUpload` option still applies.** It **is** a `FileUpload`: `acceptedFileTypes()`, `maxSize()`, `multiple()`, image editing, file naming and visibility work unchanged. See [How it works](#how-it-works).
 - **Instant preview.** The imported file drops into the dropzone as a live upload item with a thumbnail, progress bar and remove button. See [Instant preview](#instant-preview).
@@ -110,6 +111,10 @@ MultiSourceFileUpload::make('avatar')
 ```
 
 The field renders a compact **File / From URL** switch beside the label. On *From URL* the user pastes a link and clicks **Import**: the file is fetched server-side (SSRF/size guarded) and handed to the field's own uploader, so it appears in the dropzone as a normal upload — thumbnail, type/size validation, progress bar, remove button and all — and saves exactly like a dragged-in file.
+
+### Dropping a link or an image from another tab
+
+Dragging an image (or a link) out of another browser tab and dropping it anywhere on the field imports it from its URL — the same server-side fetch as the *From URL* pane, no click needed. The browser attaches a `File` to such a drag too, but that file is named after the URL's last segment (often just `image`, no extension) and typed after whatever the page served, so FilePond would refuse it; the import sniffs the real type from the bytes and names the file properly. Files dragged in from disk carry no URL and go straight to FilePond as before.
 
 ### Multiple files
 

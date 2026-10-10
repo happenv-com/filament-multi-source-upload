@@ -90,6 +90,18 @@ it('renders the source switch and drives FilePond from the URL pane', function (
         ->and($html)->toContain("callSchemaComponentMethod('form.logo-upload', 'fetchRemoteFile'");
 });
 
+it('imports a link or image dropped in from another browser tab', function (): void {
+    $html = Livewire::test(MultiSourceUploadTestForm::class)->html();
+
+    // The drop is intercepted in the capture phase, before FilePond's own
+    // listener takes the (often extension-less, mistyped) File the browser
+    // attaches next to the URL; only http(s) links from text/uri-list count.
+    expect($html)->toContain('x-on:drop.capture="importDrop($event)"')
+        ->and($html)->toContain("includes('text/uri-list')")
+        ->and($html)->toContain('event.stopPropagation()')
+        ->and($html)->toContain('this.importFromUrl()');
+});
+
 it('renders a plain FileUpload (no tabs) when url import is disabled', function (): void {
     Livewire::test(MultiSourceUploadTestForm::class, ['urlImport' => false])
         ->assertDontSee('data-msu-tabs', escape: false)
