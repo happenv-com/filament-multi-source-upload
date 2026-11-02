@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Happenv\FilamentMultiSourceUpload\Tests\Fixtures;
 
+use Filament\Actions\Action;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Schema;
@@ -41,6 +42,9 @@ class MultiSourceUploadTestForm extends Component implements HasForms
             ->components([
                 MultiSourceFileUpload::make('logo_path')
                     ->key('logo-upload')
+                    ->label('Logo')
+                    ->hint('Square, please')
+                    ->hintAction(Action::make('lookup')->label('Look it up'))
                     ->disk('public')
                     ->directory('logos')
                     ->image()

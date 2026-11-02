@@ -5,3 +5,16 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: src/MultiSourceFileUpload.php
+
+		-
+			message: '#^Parameter \#1 \$view of static method Filament\\Schemas\\Components\\View\:\:make\(\) expects view\-string, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/MultiSourceFileUpload.php
+
+		-
+			# Exposed replaces it only from Filament 4.16 / 5.11; the package still supports 4.12+ / 5.7+.
+			message: '#^Attribute class Filament\\Support\\Components\\Attributes\\ExposedLivewireMethod is deprecated\: Use `Exposed` instead\.$#'
+			identifier: attribute.deprecated
+			count: 1
+			path: src/MultiSourceFileUpload.php
