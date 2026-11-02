@@ -5,13 +5,13 @@
     class="fi-msu-switch"
     role="tablist"
     x-data="{ tab: 'file' }"
-    x-on:msu-tab.window="if ($event.detail?.key === @js($key)) tab = $event.detail.tab"
+    x-on:msu-tab.window="if ($event.detail?.key === @js($eventKey)) tab = $event.detail.tab"
 >
     <button
         type="button"
         role="tab"
         class="fi-msu-switch-option"
-        x-on:click="tab = 'file'; $dispatch('msu-tab', { key: @js($key), tab: 'file' })"
+        x-on:click="tab = 'file'; $dispatch('msu-tab', { key: @js($eventKey), tab: 'file' })"
         x-bind:class="{ 'fi-active': tab === 'file' }"
         x-bind:aria-selected="tab === 'file'"
     >
@@ -22,7 +22,7 @@
         type="button"
         role="tab"
         class="fi-msu-switch-option"
-        x-on:click="tab = 'url'; $dispatch('msu-tab', { key: @js($key), tab: 'url' })"
+        x-on:click="tab = 'url'; $dispatch('msu-tab', { key: @js($eventKey), tab: 'url' })"
         x-bind:class="{ 'fi-active': tab === 'url' }"
         x-bind:aria-selected="tab === 'url'"
     >

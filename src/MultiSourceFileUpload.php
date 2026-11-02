@@ -52,10 +52,20 @@ class MultiSourceFileUpload extends FileUpload
     {
         return View::make('filament-multi-source-upload::components.source-switch')
             ->viewData([
-                'key' => $this->getKey(),
+                'eventKey' => $this->getTabEventKey(),
                 'fileTabLabel' => $this->getFileTabLabel(),
                 'urlTabLabel' => $this->getUrlTabLabel(),
             ]);
+    }
+
+    /**
+     * The switch and the panes talk over a window-wide `msu-tab` event. The
+     * schema key alone repeats across instances of the same form on one page,
+     * so the owning Livewire component's ID scopes the event to this field.
+     */
+    protected function getTabEventKey(): string
+    {
+        return $this->getLivewire()->getId() . '.' . $this->getKey();
     }
 
     public function urlImport(bool | Closure $condition = true): static
@@ -144,6 +154,7 @@ class MultiSourceFileUpload extends FileUpload
             $html = view('filament-multi-source-upload::components.multi-source-file-upload', [
                 'filePane' => $html,
                 'key' => $this->getKey(),
+                'eventKey' => $this->getTabEventKey(),
                 'urlPlaceholder' => __('filament-multi-source-upload::multi-source-file-upload.url_placeholder'),
                 'importLabel' => __('filament-multi-source-upload::multi-source-file-upload.import'),
                 'genericErrorMessage' => __('filament-multi-source-upload::multi-source-file-upload.import_failed'),

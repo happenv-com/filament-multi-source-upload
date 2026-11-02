@@ -74,10 +74,11 @@ it('returns an error for an empty URL', function (): void {
 });
 
 it('renders the source switch and drives FilePond from the URL pane', function (): void {
-    $html = Livewire::test(MultiSourceUploadTestForm::class)
+    $component = Livewire::test(MultiSourceUploadTestForm::class)
         ->assertSee('data-msu-tabs', escape: false)
-        ->assertSee('From URL')
-        ->html();
+        ->assertSee('From URL');
+    $html = $component->html();
+    $eventKey = $component->id() . '.form.logo-upload';
 
     expect($html)->toContain('fi-msu-switch')
         // The switch is an after-label component: Filament's own label row
@@ -88,7 +89,11 @@ it('renders the source switch and drives FilePond from the URL pane', function (
         ->and($html)->toContain('Look it up')
         ->and($html)->not->toContain('fi-msu-header')
         ->and(substr_count($html, 'fi-fo-field-label-content'))->toBe(1)
-        ->and($html)->toContain('$dispatch(\'msu-tab\', { key: \'form.logo-upload\', tab: \'url\' })')
+        // Switch and panes talk over a window event, so its key names the owning
+        // Livewire component too: two instances of one form must not drive each other.
+        ->and($html)->toContain("\$dispatch('msu-tab', { key: '{$eventKey}', tab: 'url' })")
+        ->and($html)->toContain("this.\$dispatch('msu-tab', { key: '{$eventKey}', tab })")
+        ->and($html)->not->toContain("key: 'form.logo-upload'")
         ->and($html)->toContain('x-on:msu-tab.window="followSwitch($event)"')
         // Both panes live inside the field wrapper, below the label row —
         // so the row (and the switch in it) survives showing the URL pane.

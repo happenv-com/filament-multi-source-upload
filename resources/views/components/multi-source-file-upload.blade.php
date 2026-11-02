@@ -9,11 +9,11 @@
         // field, and hears back when the panes change tab on their own
         // (an import lands on the file pane).
         init() {
-            this.$watch('tab', (tab) => this.$dispatch('msu-tab', { key: @js($key), tab }))
+            this.$watch('tab', (tab) => this.$dispatch('msu-tab', { key: @js($eventKey), tab }))
         },
 
         followSwitch(event) {
-            if (event.detail?.key !== @js($key) || event.detail?.tab === this.tab) {
+            if (event.detail?.key !== @js($eventKey) || event.detail?.tab === this.tab) {
                 return
             }
 
