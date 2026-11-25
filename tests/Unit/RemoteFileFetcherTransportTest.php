@@ -51,6 +51,26 @@ function transportTestPartialFiles(): array
     return glob(sys_get_temp_dir() . '/msu_*') ?: [];
 }
 
+it('asks for the identity encoding, so the capped bytes are the bytes saved', function (): void {
+    $file = new RemoteFileFetcher()
+        ->fetch("{$this->baseUrl}/accept-encoding", allowPrivateNetworks: true, maxSizeKb: 64);
+
+    expect(trim($file->get()))->toBe('identity');
+});
+
+it('refuses a gzip response that would decode to far more than the cap, and removes the partial file', function (): void {
+    $before = transportTestPartialFiles();
+
+    try {
+        new RemoteFileFetcher()->fetch("{$this->baseUrl}/gzip-bomb", allowPrivateNetworks: true, maxSizeKb: 64);
+        $this->fail('Expected the encoded response to be refused.');
+    } catch (RemoteFileFetchException $exception) {
+        expect($exception->reason())->toBe('filament-multi-source-upload::multi-source-file-upload.reason_unreachable');
+    }
+
+    expect(transportTestPartialFiles())->toEqualCanonicalizing($before);
+});
+
 it('downloads through the real curl handler', function (): void {
     $file = new RemoteFileFetcher()
         ->fetch("{$this->baseUrl}/logo.png", allowPrivateNetworks: true, maxSizeKb: 64);

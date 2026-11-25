@@ -261,9 +261,15 @@ final readonly class RemoteFileFetcher
             $pin = $this->pinConnection($this->assertAllowedUrl($url, $allowPrivateNetworks));
 
             try {
-                $response = Http::withHeaders(['User-Agent' => self::userAgent()])
+                // The size cap counts the bytes curl receives, which are the
+                // bytes written to the sink only while nothing is decoded on
+                // the way: a few KB of gzip can decode to gigabytes. So the
+                // fetcher asks for the identity encoding and decodes nothing;
+                // an answer that is encoded anyway is refused in download().
+                $response = Http::withHeaders(['User-Agent' => self::userAgent(), 'Accept-Encoding' => 'identity'])
                     ->withOptions([
                         'allow_redirects' => false,
+                        'decode_content' => false,
                         'sink' => $sink,
                         ...$this->abortOverCap($overCap, $pin),
                     ])
@@ -368,6 +374,14 @@ final readonly class RemoteFileFetcher
             $response = $this->request($url, $allowPrivateNetworks, $maxBytes, $localPath);
 
             if (! $response->successful()) {
+                throw RemoteFileFetchException::unreachable();
+            }
+
+            // A body that stayed compressed (the server ignored
+            // `Accept-Encoding: identity`) has no known decoded size and is not
+            // what the user pointed at; refuse it instead of saving it as is.
+            $encoding = strtolower(trim($response->header('Content-Encoding')));
+            if ($encoding !== '' && $encoding !== 'identity') {
                 throw RemoteFileFetchException::unreachable();
             }
 
