@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Šis adresas neleidžiamas.',
     'reason_too_large' => 'Failas viršija leistiną dydį.',
     'reason_unreachable' => 'Nepavyko atsisiųsti failo iš nuorodos.',
+    'reason_encoded_response' => 'Nuoroda grąžino suspaustą failą, kurio importuoti negalima.',
     'reason_invalid_type' => 'Šio tipo failai čia nepriimami.',
 ];

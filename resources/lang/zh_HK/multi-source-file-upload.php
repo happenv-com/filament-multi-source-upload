@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => '不允許使用此地址。',
     'reason_too_large' => '檔案大小超出允許的上限。',
     'reason_unreachable' => '無法從該連結下載檔案。',
+    'reason_encoded_response' => '該連結傳回了壓縮檔案，無法匯入。',
     'reason_invalid_type' => '此處不接受此檔案類型。',
 ];

@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'このアドレスは許可されていません。',
     'reason_too_large' => 'ファイルサイズが上限を超えています。',
     'reason_unreachable' => 'リンクからファイルをダウンロードできませんでした。',
+    'reason_encoded_response' => 'リンク先は圧縮されたファイルを返したため、インポートできません。',
     'reason_invalid_type' => 'このファイル形式はここでは受け付けていません。',
 ];

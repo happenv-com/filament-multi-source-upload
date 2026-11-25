@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Helbide hori ez dago baimenduta.',
     'reason_too_large' => 'Fitxategia baimendutakoa baino handiagoa da.',
     'reason_unreachable' => 'Ezin izan da fitxategia estekatik deskargatu.',
+    'reason_encoded_response' => 'Estekak fitxategi konprimitu bat itzuli du, eta ezin da inportatu.',
     'reason_invalid_type' => 'Fitxategi mota hori ez da hemen onartzen.',
 ];

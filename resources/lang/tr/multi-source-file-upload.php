@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Bu adrese izin verilmiyor.',
     'reason_too_large' => 'Dosya izin verilen boyuttan büyük.',
     'reason_unreachable' => 'Dosya bağlantıdan indirilemedi.',
+    'reason_encoded_response' => 'Bağlantı, içe aktarılamayan sıkıştırılmış bir dosya döndürdü.',
     'reason_invalid_type' => 'Bu dosya türü burada kabul edilmiyor.',
 ];

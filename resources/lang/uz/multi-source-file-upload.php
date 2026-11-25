@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Bu manzilga ruxsat berilmagan.',
     'reason_too_large' => 'Fayl ruxsat etilgan hajmdan katta.',
     'reason_unreachable' => 'Havoladan faylni yuklab olib boʻlmadi.',
+    'reason_encoded_response' => 'Havola import qilib bo\'lmaydigan siqilgan fayl qaytardi.',
     'reason_invalid_type' => 'Bu turdagi fayl bu yerda qabul qilinmaydi.',
 ];

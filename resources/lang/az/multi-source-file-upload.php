@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Bu ünvana icazə verilmir.',
     'reason_too_large' => 'Fayl icazə verilən ölçüdən böyükdür.',
     'reason_unreachable' => 'Faylı keçiddən endirmək mümkün olmadı.',
+    'reason_encoded_response' => 'Keçid sıxılmış fayl qaytardı, onu idxal etmək mümkün deyil.',
     'reason_invalid_type' => 'Bu fayl növü burada qəbul edilmir.',
 ];

@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'ئەم ناونیشانە ڕێگەپێدراو نییە.',
     'reason_too_large' => 'قەبارەی پەڕگەکە لە ڕادەی ڕێگەپێدراو گەورەترە.',
     'reason_unreachable' => 'نەتوانرا پەڕگەکە لە بەستەرەکەوە دابگیرێت.',
+    'reason_encoded_response' => 'Girêdan pelek pêçayî vegerand ku nayê wergirtin.',
     'reason_invalid_type' => 'ئەم جۆرە پەڕگەیە لێرەدا پەسەند ناکرێت.',
 ];

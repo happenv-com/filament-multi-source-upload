@@ -65,7 +65,7 @@ it('refuses a gzip response that would decode to far more than the cap, and remo
         new RemoteFileFetcher()->fetch("{$this->baseUrl}/gzip-bomb", allowPrivateNetworks: true, maxSizeKb: 64);
         $this->fail('Expected the encoded response to be refused.');
     } catch (RemoteFileFetchException $exception) {
-        expect($exception->reason())->toBe('filament-multi-source-upload::multi-source-file-upload.reason_unreachable');
+        expect($exception->reason())->toBe('filament-multi-source-upload::multi-source-file-upload.reason_encoded_response');
     }
 
     expect(transportTestPartialFiles())->toEqualCanonicalizing($before);

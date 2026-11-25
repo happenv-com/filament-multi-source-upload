@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'این آدرس مجاز نیست.',
     'reason_too_large' => 'حجم فایل بیشتر از حد مجاز است.',
     'reason_unreachable' => 'دانلود فایل از لینک ممکن نشد.',
+    'reason_encoded_response' => 'پیوند یک فایل فشرده برگرداند که قابل وارد کردن نیست.',
     'reason_invalid_type' => 'این نوع فایل در اینجا پذیرفته نمی‌شود.',
 ];

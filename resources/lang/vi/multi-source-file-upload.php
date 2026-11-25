@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Địa chỉ này không được phép.',
     'reason_too_large' => 'Tệp lớn hơn dung lượng cho phép.',
     'reason_unreachable' => 'Không thể tải tệp xuống từ liên kết.',
+    'reason_encoded_response' => 'Liên kết trả về một tệp nén không thể nhập được.',
     'reason_invalid_type' => 'Loại tệp này không được chấp nhận ở đây.',
 ];

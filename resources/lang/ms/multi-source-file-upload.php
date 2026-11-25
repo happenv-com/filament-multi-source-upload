@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Alamat itu tidak dibenarkan.',
     'reason_too_large' => 'Saiz fail melebihi had yang dibenarkan.',
     'reason_unreachable' => 'Fail daripada pautan tidak dapat dimuat turun.',
+    'reason_encoded_response' => 'Pautan mengembalikan fail termampat yang tidak boleh diimport.',
     'reason_invalid_type' => 'Jenis fail ini tidak diterima di sini.',
 ];

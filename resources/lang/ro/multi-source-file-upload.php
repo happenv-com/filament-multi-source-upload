@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Această adresă nu este permisă.',
     'reason_too_large' => 'Fișierul depășește dimensiunea permisă.',
     'reason_unreachable' => 'Fișierul nu a putut fi descărcat de la link.',
+    'reason_encoded_response' => 'Linkul a returnat un fișier comprimat care nu poate fi importat.',
     'reason_invalid_type' => 'Acest tip de fișier nu este acceptat aici.',
 ];

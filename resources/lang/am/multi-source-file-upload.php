@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'ይህ አድራሻ አይፈቀድም።',
     'reason_too_large' => 'ፋይሉ ከተፈቀደው መጠን በላይ ነው።',
     'reason_unreachable' => 'ፋይሉን ከአገናኙ ማውረድ አልተቻለም።',
+    'reason_encoded_response' => 'አገናኙ የተጨመቀ ፋይል መልሷል፤ ማስመጣት አይቻልም።',
     'reason_invalid_type' => 'ይህ የፋይል አይነት እዚህ ተቀባይነት የለውም።',
 ];

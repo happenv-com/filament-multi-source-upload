@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'اس پتے کی اجازت نہیں ہے۔',
     'reason_too_large' => 'فائل اجازت شدہ حد سے بڑی ہے۔',
     'reason_unreachable' => 'لنک سے فائل ڈاؤن لوڈ نہیں ہو سکی۔',
+    'reason_encoded_response' => 'لنک نے ایک کمپریس شدہ فائل واپس کی جسے درآمد نہیں کیا جا سکتا۔',
     'reason_invalid_type' => 'اس قسم کی فائل یہاں قبول نہیں کی جاتی۔',
 ];

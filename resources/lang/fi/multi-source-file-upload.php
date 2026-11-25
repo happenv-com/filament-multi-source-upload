@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Tämä osoite ei ole sallittu.',
     'reason_too_large' => 'Tiedosto ylittää sallitun koon.',
     'reason_unreachable' => 'Tiedoston lataaminen linkistä epäonnistui.',
+    'reason_encoded_response' => 'Linkki palautti pakatun tiedoston, jota ei voi tuoda.',
     'reason_invalid_type' => 'Tätä tiedostotyyppiä ei hyväksytä tässä.',
 ];
