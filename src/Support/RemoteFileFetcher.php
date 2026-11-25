@@ -43,7 +43,10 @@ final readonly class RemoteFileFetcher
     ];
 
     /** @param  (Closure(string): array<string>)|null  $hostResolver */
-    public function __construct(private ?Closure $hostResolver = null) {}
+    /**
+     * @param  string|null  $temporaryDirectory  where partial downloads are written; the system temp directory when null
+     */
+    public function __construct(private ?Closure $hostResolver = null, private ?string $temporaryDirectory = null) {}
 
     /**
      * @throws RemoteFileFetchException when the URL is disallowed, unreachable, or too large
@@ -360,10 +363,6 @@ final readonly class RemoteFileFetcher
     }
 
     /**
-     * Stream the response into a local temp file, aborting hard once the byte
-     * cap is exceeded so a hostile/oversized source cannot exhaust memory.
-     */
-    /**
      * Identify the fetcher. Wikimedia, GitHub's raw CDN and a good share of
      * image hosts answer an empty or generic User-Agent with 403.
      */
@@ -376,9 +375,13 @@ final readonly class RemoteFileFetcher
         return "filament-multi-source-upload/{$version} (+https://github.com/happenv-com/filament-multi-source-upload)";
     }
 
+    /**
+     * Stream the response into a local temp file, aborting hard once the byte
+     * cap is exceeded so a hostile/oversized source cannot exhaust memory.
+     */
     private function download(string $url, bool $allowPrivateNetworks, int $maxBytes): string
     {
-        $localPath = tempnam(sys_get_temp_dir(), 'msu_');
+        $localPath = tempnam($this->temporaryDirectory ?? sys_get_temp_dir(), 'msu_');
         if ($localPath === false) {
             throw RemoteFileFetchException::unreachable();
         }
