@@ -35,6 +35,11 @@ final class RemoteFileFetchException extends RuntimeException
         return new self(self::PREFIX . 'reason_unreachable', 'The remote file could not be downloaded.');
     }
 
+    public static function encodedResponse(): self
+    {
+        return new self(self::PREFIX . 'reason_encoded_response', 'The remote server answered with a compressed (Content-Encoding) body, which is not accepted.');
+    }
+
     public static function invalidType(string $mime): self
     {
         return new self(self::PREFIX . 'reason_invalid_type', "The remote file type [{$mime}] is not accepted.");

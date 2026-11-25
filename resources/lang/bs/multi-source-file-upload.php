@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Ta adresa nije dozvoljena.',
     'reason_too_large' => 'Fajl je veći od dozvoljenog.',
     'reason_unreachable' => 'Fajl sa linka nije moguće preuzeti.',
+    'reason_encoded_response' => 'Link je vratio komprimiranu datoteku koja se ne može uvesti.',
     'reason_invalid_type' => 'Ovaj tip fajla ovdje nije prihvaćen.',
 ];

@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Šī adrese nav atļauta.',
     'reason_too_large' => 'Fails ir lielāks, nekā atļauts.',
     'reason_unreachable' => 'Neizdevās lejupielādēt failu no saites.',
+    'reason_encoded_response' => 'Saite atgrieza saspiestu failu, ko nevar importēt.',
     'reason_invalid_type' => 'Šis faila tips šeit netiek pieņemts.',
 ];

@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Ez a cím nem engedélyezett.',
     'reason_too_large' => 'A fájl nagyobb a megengedettnél.',
     'reason_unreachable' => 'A fájlt nem sikerült letölteni a hivatkozásról.',
+    'reason_encoded_response' => 'A hivatkozás tömörített fájlt adott vissza, amely nem importálható.',
     'reason_invalid_type' => 'Ez a fájltípus itt nem elfogadott.',
 ];

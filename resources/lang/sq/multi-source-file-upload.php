@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Kjo adresë nuk lejohet.',
     'reason_too_large' => 'Skedari është më i madh se sa lejohet.',
     'reason_unreachable' => 'Skedari nuk mund të shkarkohej nga lidhja.',
+    'reason_encoded_response' => 'Lidhja ktheu një skedar të kompresuar që nuk mund të importohet.',
     'reason_invalid_type' => 'Ky lloj skedari nuk pranohet këtu.',
 ];

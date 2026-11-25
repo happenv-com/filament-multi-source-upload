@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Ta naslov ni dovoljen.',
     'reason_too_large' => 'Datoteka je večja od dovoljene velikosti.',
     'reason_unreachable' => 'Datoteke s povezave ni bilo mogoče prenesti.',
+    'reason_encoded_response' => 'Povezava je vrnila stisnjeno datoteko, ki je ni mogoče uvoziti.',
     'reason_invalid_type' => 'Ta vrsta datoteke tukaj ni dovoljena.',
 ];

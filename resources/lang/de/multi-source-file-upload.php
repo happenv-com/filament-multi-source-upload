@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Diese Adresse ist nicht erlaubt.',
     'reason_too_large' => 'Die Datei ist größer als erlaubt.',
     'reason_unreachable' => 'Die Datei konnte nicht über den Link heruntergeladen werden.',
+    'reason_encoded_response' => 'Der Link hat eine komprimierte Datei geliefert, die nicht importiert werden kann.',
     'reason_invalid_type' => 'Dieser Dateityp wird hier nicht akzeptiert.',
 ];

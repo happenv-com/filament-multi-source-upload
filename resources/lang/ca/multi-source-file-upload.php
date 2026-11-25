@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Aquesta adreça no està permesa.',
     'reason_too_large' => 'L\'arxiu supera la mida permesa.',
     'reason_unreachable' => 'No s\'ha pogut descarregar l\'arxiu de l\'enllaç.',
+    'reason_encoded_response' => 'L\'enllaç ha retornat un fitxer comprimit que no es pot importar.',
     'reason_invalid_type' => 'Aquest tipus d\'arxiu no s\'accepta aquí.',
 ];

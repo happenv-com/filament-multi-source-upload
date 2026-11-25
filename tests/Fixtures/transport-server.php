@@ -35,6 +35,20 @@ switch ($path) {
 
         break;
 
+    case '/accept-encoding':
+        header('Content-Type: text/plain');
+        echo $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '(none)';
+
+        break;
+
+    case '/gzip-bomb':
+        // Tiny on the wire, 100 times the 64 KB test cap once decoded.
+        header('Content-Type: application/octet-stream');
+        header('Content-Encoding: gzip');
+        echo gzencode(str_repeat('A', 100 * 64 * 1024), 9);
+
+        break;
+
     case '/declared':
         // A Content-Length over the cap, and a body that never arrives.
         header('Content-Type: application/octet-stream');

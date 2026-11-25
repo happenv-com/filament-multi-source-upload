@@ -22,7 +22,12 @@ beforeEach(function (): void {
     $port = (int) substr((string) strrchr((string) stream_socket_get_name($socket, false), ':'), 1);
     fclose($socket);
 
-    $this->serverLog = (string) tempnam(sys_get_temp_dir(), 'msu_test_log_');
+    // Partial downloads go to a directory of this test alone: the suite runs
+    // in parallel, so the shared temp directory holds other workers' files.
+    $this->downloads = sys_get_temp_dir() . '/transport-test-' . bin2hex(random_bytes(8));
+    mkdir($this->downloads);
+
+    $this->serverLog = (string) tempnam(sys_get_temp_dir(), 'transport_test_log_');
     $this->server = proc_open(
         [PHP_BINARY, '-S', "127.0.0.1:{$port}", __DIR__ . '/../Fixtures/transport-server.php'],
         [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']],
@@ -43,16 +48,36 @@ afterEach(function (): void {
     proc_terminate($this->server);
     proc_close($this->server);
     @unlink($this->serverLog);
+    array_map(unlink(...), glob($this->downloads . '/*') ?: []);
+    @rmdir($this->downloads);
 });
 
 /** @return array<string> */
-function transportTestPartialFiles(): array
+function transportTestPartialFiles(string $directory): array
 {
-    return glob(sys_get_temp_dir() . '/msu_*') ?: [];
+    return glob($directory . '/msu_*') ?: [];
 }
 
+it('asks for the identity encoding, so the capped bytes are the bytes saved', function (): void {
+    $file = new RemoteFileFetcher(temporaryDirectory: $this->downloads)
+        ->fetch("{$this->baseUrl}/accept-encoding", allowPrivateNetworks: true, maxSizeKb: 64);
+
+    expect(trim($file->get()))->toBe('identity');
+});
+
+it('refuses a gzip response that would decode to far more than the cap, and removes the partial file', function (): void {
+    try {
+        new RemoteFileFetcher(temporaryDirectory: $this->downloads)->fetch("{$this->baseUrl}/gzip-bomb", allowPrivateNetworks: true, maxSizeKb: 64);
+        $this->fail('Expected the encoded response to be refused.');
+    } catch (RemoteFileFetchException $exception) {
+        expect($exception->reason())->toBe('filament-multi-source-upload::multi-source-file-upload.reason_encoded_response');
+    }
+
+    expect(transportTestPartialFiles($this->downloads))->toBe([]);
+});
+
 it('downloads through the real curl handler', function (): void {
-    $file = new RemoteFileFetcher()
+    $file = new RemoteFileFetcher(temporaryDirectory: $this->downloads)
         ->fetch("{$this->baseUrl}/logo.png", allowPrivateNetworks: true, maxSizeKb: 64);
 
     expect($file)->toBeInstanceOf(TemporaryUploadedFile::class)
@@ -60,10 +85,8 @@ it('downloads through the real curl handler', function (): void {
 });
 
 it('aborts a transfer without a Content-Length once it passes the cap, and removes the partial file', function (): void {
-    $before = transportTestPartialFiles();
-
     try {
-        new RemoteFileFetcher()->fetch("{$this->baseUrl}/unbounded", allowPrivateNetworks: true, maxSizeKb: 64);
+        new RemoteFileFetcher(temporaryDirectory: $this->downloads)->fetch("{$this->baseUrl}/unbounded", allowPrivateNetworks: true, maxSizeKb: 64);
         $this->fail('Expected the transfer to be aborted.');
     } catch (RemoteFileFetchException $exception) {
         expect($exception->reason())->toBe('filament-multi-source-upload::multi-source-file-upload.reason_too_large');
@@ -76,14 +99,14 @@ it('aborts a transfer without a Content-Length once it passes the cap, and remov
     }
 
     expect((int) file_get_contents($this->serverLog))->toBeGreaterThan(0)->toBeLessThan(64 * 1024 * 1024)
-        ->and(transportTestPartialFiles())->toEqualCanonicalizing($before);
+        ->and(transportTestPartialFiles($this->downloads))->toBe([]);
 });
 
 it('aborts a transfer whose declared Content-Length is over the cap before the body arrives', function (): void {
     $started = microtime(true);
 
     try {
-        new RemoteFileFetcher()->fetch("{$this->baseUrl}/declared", allowPrivateNetworks: true, maxSizeKb: 64);
+        new RemoteFileFetcher(temporaryDirectory: $this->downloads)->fetch("{$this->baseUrl}/declared", allowPrivateNetworks: true, maxSizeKb: 64);
         $this->fail('Expected the transfer to be aborted.');
     } catch (RemoteFileFetchException $exception) {
         expect($exception->reason())->toBe('filament-multi-source-upload::multi-source-file-upload.reason_too_large');

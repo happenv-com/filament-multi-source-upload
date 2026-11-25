@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\FileUploadConfiguration;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\Mime\MimeTypes;
 use Throwable;
@@ -42,7 +43,10 @@ final readonly class RemoteFileFetcher
     ];
 
     /** @param  (Closure(string): array<string>)|null  $hostResolver */
-    public function __construct(private ?Closure $hostResolver = null) {}
+    /**
+     * @param  string|null  $temporaryDirectory  where partial downloads are written; the system temp directory when null
+     */
+    public function __construct(private ?Closure $hostResolver = null, private ?string $temporaryDirectory = null) {}
 
     /**
      * @throws RemoteFileFetchException when the URL is disallowed, unreachable, or too large
@@ -252,6 +256,7 @@ final readonly class RemoteFileFetcher
 
         for ($redirects = 0; ; $redirects++) {
             $tooLarge = false;
+            $encoded = false;
 
             // True once the declared or received size passes the cap.
             $overCap = static function (int $total, int $received) use ($maxBytes, &$tooLarge): bool {
@@ -261,16 +266,33 @@ final readonly class RemoteFileFetcher
             $pin = $this->pinConnection($this->assertAllowedUrl($url, $allowPrivateNetworks));
 
             try {
-                $response = Http::withHeaders(['User-Agent' => self::userAgent()])
+                // The size cap counts the bytes curl receives, which are the
+                // bytes written to the sink only while nothing is decoded on
+                // the way: a few KB of gzip can decode to gigabytes. So the
+                // fetcher asks for the identity encoding and decodes nothing;
+                // an answer that is encoded anyway is refused as soon as its headers arrive.
+                $response = Http::withHeaders(['User-Agent' => self::userAgent(), 'Accept-Encoding' => 'identity'])
                     ->withOptions([
                         'allow_redirects' => false,
+                        'decode_content' => false,
+                        'on_headers' => static function (ResponseInterface $response) use (&$encoded): void {
+                            if (self::isEncoded($response->getHeaderLine('Content-Encoding'))) {
+                                $encoded = true;
+
+                                throw RemoteFileFetchException::encodedResponse();
+                            }
+                        },
                         'sink' => $sink,
                         ...$this->abortOverCap($overCap, $pin),
                     ])
                     ->timeout(20)
                     ->get($url);
             } catch (Throwable) {
-                throw $tooLarge ? RemoteFileFetchException::tooLarge() : RemoteFileFetchException::unreachable();
+                throw match (true) {
+                    $encoded => RemoteFileFetchException::encodedResponse(),
+                    $tooLarge => RemoteFileFetchException::tooLarge(),
+                    default => RemoteFileFetchException::unreachable(),
+                };
             }
 
             $location = $response->header('Location');
@@ -341,10 +363,6 @@ final readonly class RemoteFileFetcher
     }
 
     /**
-     * Stream the response into a local temp file, aborting hard once the byte
-     * cap is exceeded so a hostile/oversized source cannot exhaust memory.
-     */
-    /**
      * Identify the fetcher. Wikimedia, GitHub's raw CDN and a good share of
      * image hosts answer an empty or generic User-Agent with 403.
      */
@@ -357,9 +375,13 @@ final readonly class RemoteFileFetcher
         return "filament-multi-source-upload/{$version} (+https://github.com/happenv-com/filament-multi-source-upload)";
     }
 
+    /**
+     * Stream the response into a local temp file, aborting hard once the byte
+     * cap is exceeded so a hostile/oversized source cannot exhaust memory.
+     */
     private function download(string $url, bool $allowPrivateNetworks, int $maxBytes): string
     {
-        $localPath = tempnam(sys_get_temp_dir(), 'msu_');
+        $localPath = tempnam($this->temporaryDirectory ?? sys_get_temp_dir(), 'msu_');
         if ($localPath === false) {
             throw RemoteFileFetchException::unreachable();
         }
@@ -369,6 +391,13 @@ final readonly class RemoteFileFetcher
 
             if (! $response->successful()) {
                 throw RemoteFileFetchException::unreachable();
+            }
+
+            // A body that stayed compressed (the server ignored
+            // `Accept-Encoding: identity`) has no known decoded size and is not
+            // what the user pointed at; refuse it instead of saving it as is.
+            if (self::isEncoded($response->header('Content-Encoding'))) {
+                throw RemoteFileFetchException::encodedResponse();
             }
 
             // curl aborts an oversized transfer itself; this catches whatever
@@ -384,6 +413,13 @@ final readonly class RemoteFileFetcher
         }
 
         return $localPath;
+    }
+
+    private static function isEncoded(string $contentEncoding): bool
+    {
+        $encoding = strtolower(trim($contentEncoding));
+
+        return $encoding !== '' && $encoding !== 'identity';
     }
 
     private function detectMime(string $localPath): string

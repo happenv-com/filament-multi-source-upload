@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'هذا العنوان غير مسموح به.',
     'reason_too_large' => 'حجم الملف أكبر من الحد المسموح به.',
     'reason_unreachable' => 'تعذّر تنزيل الملف من الرابط.',
+    'reason_encoded_response' => 'أعاد الرابط ملفًا مضغوطًا ولا يمكن استيراده.',
     'reason_invalid_type' => 'نوع الملف هذا غير مقبول هنا.',
 ];

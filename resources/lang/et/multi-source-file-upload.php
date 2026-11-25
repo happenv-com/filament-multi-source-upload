@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'See aadress ei ole lubatud.',
     'reason_too_large' => 'Fail on lubatust suurem.',
     'reason_unreachable' => 'Faili allalaadimine lingilt ebaõnnestus.',
+    'reason_encoded_response' => 'Link tagastas tihendatud faili, mida ei saa importida.',
     'reason_invalid_type' => 'Seda failitüüpi siin ei aktsepteerita.',
 ];

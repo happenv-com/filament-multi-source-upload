@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Hindi pinapayagan ang address na iyan.',
     'reason_too_large' => 'Mas malaki ang file kaysa sa pinapayagan.',
     'reason_unreachable' => 'Hindi ma-download ang file mula sa link.',
+    'reason_encoded_response' => 'Nagbalik ang link ng naka-compress na file na hindi maaaring i-import.',
     'reason_invalid_type' => 'Hindi tinatanggap dito ang ganitong uri ng file.',
 ];

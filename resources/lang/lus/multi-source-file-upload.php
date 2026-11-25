@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'He address hi hman phal a ni lo.',
     'reason_too_large' => 'File hi phal chin aiin a lian zawk.',
     'reason_unreachable' => 'Link atang hian file download theih a ni lo.',
+    'reason_encoded_response' => 'Link chuan file hmanral a rawn thlen a, import theih loh a ni.',
     'reason_invalid_type' => 'He file chi hi hetah hian pawm theih a ni lo.',
 ];

@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Denne adressen er ikke tillatt.',
     'reason_too_large' => 'Filen er større enn tillatt.',
     'reason_unreachable' => 'Kunne ikke laste ned filen fra lenken.',
+    'reason_encoded_response' => 'Lenken returnerte en komprimert fil som ikke kan importeres.',
     'reason_invalid_type' => 'Denne filtypen godtas ikke her.',
 ];

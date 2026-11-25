@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Anwani hiyo hairuhusiwi.',
     'reason_too_large' => 'Faili ni kubwa kuliko inavyoruhusiwa.',
     'reason_unreachable' => 'Imeshindwa kupakua faili kutoka kwenye kiungo.',
+    'reason_encoded_response' => 'Kiungo kilirudisha faili iliyobanwa ambayo haiwezi kuingizwa.',
     'reason_invalid_type' => 'Aina hiyo ya faili haikubaliwi hapa.',
 ];

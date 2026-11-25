@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'Tato adresa není povolena.',
     'reason_too_large' => 'Soubor je větší, než je povoleno.',
     'reason_unreachable' => 'Soubor z odkazu se nepodařilo stáhnout.',
+    'reason_encoded_response' => 'Odkaz vrátil komprimovaný soubor, který nelze importovat.',
     'reason_invalid_type' => 'Tento typ souboru zde není povolen.',
 ];

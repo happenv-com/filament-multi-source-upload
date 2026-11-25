@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'එම ලිපිනයට ඉඩ නොදේ.',
     'reason_too_large' => 'ගොනුව ඉඩ දී ඇති ප්‍රමාණයට වඩා විශාලය.',
     'reason_unreachable' => 'සබැඳිය බාගත කළ නොහැකි විය.',
+    'reason_encoded_response' => 'සබැඳිය සම්පීඩිත ගොනුවක් ලබා දුන් අතර, එය ආයාත කළ නොහැක.',
     'reason_invalid_type' => 'එම ගොනු වර්ගය මෙහි පිළිගනු නොලැබේ.',
 ];

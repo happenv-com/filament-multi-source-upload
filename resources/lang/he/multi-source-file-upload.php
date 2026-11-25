@@ -13,5 +13,6 @@ return [
     'reason_blocked_host' => 'כתובת זו אינה מותרת.',
     'reason_too_large' => 'הקובץ גדול מהגודל המותר.',
     'reason_unreachable' => 'לא ניתן היה להוריד את הקובץ מהקישור.',
+    'reason_encoded_response' => 'הקישור החזיר קובץ דחוס שלא ניתן לייבא.',
     'reason_invalid_type' => 'סוג קובץ זה אינו מתקבל כאן.',
 ];
